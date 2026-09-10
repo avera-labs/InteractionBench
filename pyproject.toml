@@ -1,0 +1,52 @@
+[project]
+name = "interactionbench"
+version = "0.1.0"
+description = "InteractionBench — measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # ── Offline grader core (grade_live / grade_model / content_judge / vad_utils) ──
+    "python-dotenv",
+    "pydub",            # needs system ffmpeg
+    "audioop-lts ; python_version >= '3.13'",   # pydub uses stdlib `audioop`, removed in py3.13 (PEP 594)
+    "numpy",
+    "scipy",
+    "soundfile",
+    "webrtcvad",        # VAD turn boundaries (vad_utils)
+    "setuptools<82",    # webrtcvad imports pkg_resources at load; setuptools 82+ dropped it, so pin <82
+    "google-genai",     # Gemini content judge (content_judge), used only when gemini=True
+    # ── Live evaluation dashboard (dashboard/server.py, gen_benchmark) ──
+    "aiohttp",
+    "requests",         # MiMo gateway transport (mimo_gateway)
+    # ── Paralinguistic dimension (acoustics.py — whisper/volume detection) ──
+    "praat-parselmouth>=0.4.7",   # HNR (harmonics-to-noise) — the whisper killer signal
+    "librosa",                    # pyin F0 / voiced-ratio / spectral centroid & flatness
+    "openai>=2.53.0",
+]
+
+[project.optional-dependencies]
+# Live model relays used by the dashboard (lazy-imported per model — the server boots without
+# them; each is only needed to actually connect that model):
+#   openai → GPT realtime · sphn → Moshi/PersonaPlex opus codec · python-socketio → FreezeOmni.
+# Install with:  uv sync --extra dashboard
+dashboard = [
+    "openai",
+    "sphn==0.1.12",     # relay_moshi uses OpusStreamReader.read_pcm(); 0.2.x removed it
+    "python-socketio",
+    "python-socks",     # websockets needs it to reach GPT/Gemini through a SOCKS proxy (restricted networks)
+]
+
+# Local word-level ASR (parakeet_local) — Apple Silicon only. NOT needed by the offline
+# grader itself (feed it any ASR emitting {"word","t0","t1"}); only for producing that ASR
+# locally or running the dashboard's parakeet endpoint. Pin modern numba/llvmlite so the
+# numba→llvmlite chain builds on Python 3.11–3.13 (the default resolve picks an ancient
+# llvmlite 0.36 that has no 3.13 wheel). Install with:  uv sync --extra asr
+asr = [
+    "parakeet-mlx ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "numba>=0.61 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "llvmlite>=0.44 ; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+# InteractionBench is a flat set of scripts, not an installable package — just manage the venv/deps.
+[tool.uv]
+package = false

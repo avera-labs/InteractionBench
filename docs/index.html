@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InteractionBench — Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opt@0,6..72;1,6..72&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --panel:#f7f8fa; --ink:#1a1d21; --muted:#5b6570; --line:#e5e8ec;
+  --accent:#2b6cb0; --accent-soft:#ebf3fb;
+  --good:#2f855a; --good-bg:#e7f4ec; --bad:#c53030; --bad-bg:#fdecec; --warn:#b7791f; --warn-bg:#fbf3e3;
+  --user:#4299e1; --model:#38a169; --overlap:#e53e3e;
+  --maxw:1060px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.6;
+  -webkit-font-smoothing:antialiased;font-size:16px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+h1,h2,h3{font-family:Newsreader,Georgia,serif;font-weight:600;line-height:1.2;letter-spacing:-.01em}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+section{padding:44px 0;border-top:1px solid var(--line)}
+section:first-of-type{border-top:none}
+.eyebrow{font-family:Inter;font-weight:600;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+h2{font-size:30px;margin:.15em 0 .5em}
+h3{font-size:21px;margin:1.4em 0 .4em}
+p{margin:.6em 0}
+.lead{font-size:18px;color:#2c3540}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+
+/* hero */
+.hero{padding:60px 0 40px;text-align:center;background:
+  radial-gradient(1200px 340px at 50% -80px,var(--accent-soft),transparent 70%)}
+.hero h1{font-size:46px;margin:.1em 0 .25em}
+.hero .sub{font-size:19px;color:var(--muted);max-width:680px;margin:0 auto 1.1em}
+.badges{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin:14px 0 4px}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 13px;border:1px solid var(--line);
+  border-radius:999px;background:#fff;font-size:13.5px;font-weight:500}
+.pill.strong{background:var(--ink);color:#fff;border-color:var(--ink)}
+.orgline{margin-top:16px;font-size:14px;color:var(--muted)}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;margin:.6em 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{font-weight:600;color:var(--muted);font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid var(--line)}
+tbody tr:hover{background:var(--panel)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.sysname{font-weight:600}
+.rank1{color:var(--good);font-weight:700}
+.bar{position:relative;display:inline-block;height:8px;border-radius:4px;background:var(--accent);vertical-align:middle;margin-left:8px}
+.best{background:var(--good-bg);}
+.worst{background:var(--bad-bg);}
+
+/* generic cards */
+.grid{display:grid;gap:16px}
+.cards6{grid-template-columns:repeat(3,1fr)}
+.card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fff}
+.card h4{margin:.1em 0 .3em;font-size:15px;font-family:Inter;font-weight:700}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;margin-bottom:6px}
+.tag.cloud{background:#eef2ff;color:#4c51bf}.tag.open{background:#e7f4ec;color:var(--good)}
+.tag.base{background:#f0eefb;color:#6b46c1}
+
+/* diff table highlight */
+.diff td:first-child{font-weight:700;text-align:center;color:var(--accent);width:34px}
+.hold{color:var(--good);font-weight:600}.softish{color:var(--warn);font-weight:600}
+
+/* task chips */
+.taskfam{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.taskcol h3{margin-top:0}
+.tasklist{list-style:none;padding:0;margin:0}
+.tasklist li{padding:10px 0;border-bottom:1px solid var(--line)}
+.tasklist b{font-family:Inter}
+.scen{padding:11px 0;border-bottom:1px solid var(--line)}
+.scen .name{font-family:Inter;font-weight:700;font-size:15px}
+.scen .r{font-size:13.5px;color:var(--muted);margin-top:2px}
+.scen .r b{color:var(--ink);font-weight:600}
+@media(max-width:760px){.taskfam{grid-template-columns:1fr}.cards6{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.cards6{grid-template-columns:1fr}}
+
+/* examples / comparison */
+.ex{border:1px solid var(--line);border-radius:14px;padding:18px 18px 8px;margin:18px 0;background:#fff}
+.ex .prompt{font-size:14px;color:var(--muted);margin-bottom:2px}
+.ex .promptq{font-size:16.5px;font-weight:500;font-family:Newsreader;font-style:italic;color:#2c3540}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin:10px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.sw{width:12px;height:10px;border-radius:2px;display:inline-block}
+.row{display:grid;grid-template-columns:150px 30px 1fr 150px;align-items:center;gap:10px;
+  padding:8px 0;border-top:1px solid var(--line)}
+.row .rsys{font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.play{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;color:var(--ink);font-size:12px;flex:none}
+.play:hover{background:var(--panel)}
+.play.playing{background:var(--accent);color:#fff;border-color:var(--accent)}
+.verdict{font-size:12px;font-weight:600;padding:4px 9px;border-radius:7px;text-align:center;white-space:normal;line-height:1.25}
+.verdict.good{background:var(--good-bg);color:var(--good)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict.warn{background:var(--warn-bg);color:var(--warn)}
+/* timeline */
+.tl{position:relative;height:34px;border-radius:6px;background:var(--panel);overflow:hidden;cursor:pointer}
+.tl .band{position:absolute;left:0;right:0;height:14px}
+.tl .band.u{top:2px}.tl .band.m{bottom:2px}
+.tl .seg{position:absolute;height:14px;border-radius:3px;top:0}
+.tl .seg.u{background:var(--user)}.tl .seg.m{background:var(--model)}
+.tl .ov{position:absolute;top:0;bottom:0;background:rgba(229,62,62,.28);border-left:1px solid var(--overlap);border-right:1px solid var(--overlap)}
+.tl .ph{position:absolute;top:0;bottom:0;width:2px;background:#1a1d21;left:0;display:none}
+.tl.playing .ph,.tl.seeked .ph{display:block}
+.tl.seeked .ph{background:var(--accent)}
+.tl .lbl{position:absolute;right:5px;font-size:9px;color:#fff;font-weight:700;opacity:.8}
+.tl .lbl.u{top:1px}.tl .lbl.m{bottom:1px}
+.why{grid-column:1/5;font-size:12px;padding:0 0 6px;line-height:1.4}
+.why.bad{color:var(--bad)}.why.warn{color:var(--warn)}
+.why::before{content:"✗ ";font-weight:700;opacity:.85}
+.why.warn::before{content:"⚠ "}
+.trans{grid-column:3/5;font-size:13px;color:var(--muted);padding:2px 0 6px;font-style:italic;display:none}
+.trans.show{display:block}
+.trans .tline{margin:2px 0}
+.trans .tlab{font-style:normal;opacity:.85;font-weight:700;font-size:10px;letter-spacing:.04em;text-transform:uppercase;display:inline-block;min-width:46px;color:var(--muted)}
+.trans .tlab.u{color:var(--user)}
+.trans .tlab.m{color:var(--model)}
+.trans .gap{font-style:normal;font-size:10px;color:var(--muted);opacity:.6;margin:0 0 0 52px;font-variant-numeric:tabular-nums}
+.trans .gap::before{content:"⏸ "}
+.trans .w{border-radius:3px;padding:0 1px;transition:background .08s ease,color .08s ease}
+.trans .w.on{background:var(--model);color:#fff;font-style:normal}
+.trans .w.wu.on{background:var(--user);color:#fff}
+.row .expand{grid-column:1/2;font-size:11.5px;color:var(--accent);cursor:pointer;user-select:none}
+@media(max-width:680px){
+  .row{grid-template-columns:110px 26px 1fr;grid-template-rows:auto auto;gap:6px 8px}
+  .verdict{grid-column:1/4}
+  .trans{grid-column:1/4}
+  .why{grid-column:1/4}
+}
+
+/* findings */
+.finding{display:grid;grid-template-columns:38px 1fr;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+.finding .n{font-family:Newsreader;font-size:28px;color:var(--accent);font-weight:600}
+.finding h3{margin:.1em 0 .25em;font-size:19px}
+.callout{background:var(--panel);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin:10px 0;font-size:14.5px}
+
+/* method */
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0;font-size:13px}
+.step{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-weight:500}
+.arrow{color:var(--muted)}
+code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.codeblock{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:11px 14px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:#2c3540;
+  white-space:pre-wrap;overflow-x:auto;margin:9px 0;line-height:1.55}
+.codeblock .k{color:var(--accent)}
+.mlist{margin:.4em 0;padding-left:1.1em}
+.mlist li{margin:.3em 0;color:var(--muted)}
+.mlist b{color:var(--ink);font-family:Inter}
+
+footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center}
+.tocnav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);font-size:13px}
+.tocnav .wrap{display:flex;gap:18px;overflow-x:auto;padding:11px 22px}
+.tocnav a{color:var(--muted);white-space:nowrap;font-weight:500}
+.tocnav a:hover{color:var(--accent);text-decoration:none}
+
+/* leaderboard cards (τ-bench style) */
+.board-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;margin-top:18px}
+.bcard{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+.bcard.clickable{cursor:pointer;transition:box-shadow .15s ease,border-color .15s ease,transform .1s ease}
+.bcard.clickable:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(43,108,176,.14)}
+.bcard.clickable:hover .jump{opacity:1}
+.bcard.clickable:active{transform:translateY(1px)}
+.bcard.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bcard .jump{font-family:Inter;font-weight:600;font-size:11px;color:var(--accent);opacity:.55;margin-left:4px}
+.bcard .bhead{padding:13px 16px 11px;border-bottom:1px solid var(--line);background:var(--panel)}
+.bcard .btask{font-family:Inter;font-weight:700;font-size:15px;color:var(--ink)}
+.bcard .bmetric{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+.bcard .brow{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:9px;padding:8px 16px;font-size:14px;border-top:1px solid var(--line)}
+.bcard .brow:first-of-type{border-top:none}
+.bcard .brow.top1{background:linear-gradient(90deg,rgba(47,133,90,.09),transparent 75%)}
+.bcard .brank{text-align:center;font-size:15px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.bcard .bsys{display:flex;align-items:center;gap:8px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bcard .bsys .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.bcard .bpct{font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+</style>
+</head>
+<body>
+
+<nav class="tocnav"><div class="wrap">
+  <a href="#top">InteractionBench</a><a href="#overview">Overview</a>
+  <a href="#design">Design</a><a href="#scenarios">Scenarios</a><a href="#board">Leaderboard</a><a href="#results">Results</a>
+  <a href="#samples">Listen</a><a href="#analysis">Analysis</a><a href="#method">Method</a>
+  <a href="#limitations">Limitations</a><a href="#cite">Cite</a>
+</div></nav>
+
+<a id="top"></a>
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">InteractionBench · AveraLabs</div>
+  <h1>InteractionBench</h1>
+  <p class="sub">Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems.</p>
+  <div class="badges">
+    <span class="pill strong">Twelve scenarios</span>
+    <span class="pill">Three evaluation dimensions</span>
+    <span class="pill">211 items × 6 systems = 1,200+ graded recordings</span>
+  </div>
+  <div class="badges">
+    <a class="pill" href="https://github.com/avera-labs">▹ Code &amp; data</a>
+    <a class="pill" href="#samples">▹ Listen to samples</a>
+  </div>
+  <div class="orgline">Richard Yucheng He · Chen Xu · Yihang Liu · Tairan Chen — AveraLabs, 2026</div>
+</div></header>
+
+<!-- OVERVIEW -->
+<section id="overview"><div class="wrap">
+  <div class="eyebrow">Overview</div>
+  <h2>When a system speaks is part of the answer</h2>
+  <p class="lead">In a spoken conversation, the moment a system chooses to speak carries meaning of its own.
+    A pause is not necessarily the end of a turn. “Uh-huh” usually signals attention rather than a new
+    request. An interruption can replace the request the system was in the middle of answering. And a
+    correct answer delivered at the wrong moment still makes for a poor interaction.</p>
+  <p class="muted">Conversational benchmarks tend to measure interaction; task benchmarks tend to measure
+    whether the answer was correct. A real-time voice system has to manage both at once, and the two can
+    come apart — a system that handles turns gracefully may still answer poorly, and a system that answers
+    well may misread the user's timing. InteractionBench measures reasoning accuracy, conversational timing,
+    and paralinguistic control in recorded sessions, using the same audio inputs and the same evaluators
+    across every system, and reports the three dimensions separately so they can be read on their own terms.</p>
+</div></section>
+
+<!-- EVALUATION DESIGN -->
+<section id="design"><div class="wrap">
+  <div class="eyebrow">Evaluation design</div>
+  <h2>Design choices</h2>
+  <p class="muted">Four choices shape what the results can and cannot show.</p>
+  <ul class="mlist">
+    <li><b>Timing and reasoning are reported separately</b> — combining them into one score would hide
+      systems that do well on one dimension and poorly on the other.</li>
+    <li><b>The same audio input drives every system</b>, so a difference between recordings comes from the
+      system and not from a differently worded prompt.</li>
+    <li><b>A turn-based cascade supplies an architecture reference</b>, which lets a timing failure be
+      attributed to endpointing rather than to the language model that produced the answer.</li>
+    <li><b>Every item stays inspectable</b> — the audio, transcripts, two-track timeline, and the grader's
+      explanation are all available per item in the section below.</li>
+  </ul>
+</div></section>
+
+<!-- SCENARIOS -->
+<section id="scenarios"><div class="wrap">
+  <div class="eyebrow">Scenarios</div>
+  <h2>Twelve scenarios</h2>
+  <p class="muted">Five scenarios test conversational timing; five test spoken-answer accuracy — two of which
+    also demand <b>restraint</b> (staying quiet until the right moment); and two test <b>paralinguistic
+    control</b> — whispering on request and understanding volume. Each one below states what happens, what a
+    successful system does, and what to listen for in the samples.</p>
+  <div class="taskfam">
+    <div class="taskcol"><h3>Conversational timing</h3>
+      <div class="scen"><div class="name">Backchannel</div>
+        <div class="r"><b>Scenario:</b> the user speaks for an extended turn.</div>
+        <div class="r"><b>Expected:</b> the system gives brief acknowledgements without beginning a full response or taking the floor.</div>
+        <div class="r"><b>Listen for:</b> short, well-placed “mhm” or “right,” and no interruption of the user's thought.</div></div>
+      <div class="scen"><div class="name">Pause handling</div>
+        <div class="r"><b>Scenario:</b> the user pauses mid-sentence, then continues.</div>
+        <div class="r"><b>Expected:</b> the system waits through the pause rather than treating it as the end of the turn.</div>
+        <div class="r"><b>Listen for:</b> silence during the gap; the system does not start a reply before the user resumes.</div></div>
+      <div class="scen"><div class="name">Turn-taking</div>
+        <div class="r"><b>Scenario:</b> the user finishes a question and stops.</div>
+        <div class="r"><b>Expected:</b> the system begins its answer promptly, without a long delay or a false start.</div>
+        <div class="r"><b>Listen for:</b> a clean start about a second after the user stops, not overlapping their last words.</div></div>
+      <div class="scen"><div class="name">User backchannel</div>
+        <div class="r"><b>Scenario:</b> the user drops a short backchannel — “mhm,” “right,” “ok,” “uh-huh” — while the system is speaking.</div>
+        <div class="r"><b>Expected:</b> the system continues its answer, treating the token as attention rather than a new instruction.</div>
+        <div class="r"><b>Listen for:</b> the system keeps its thread and does not restart, stop, or change topic.</div></div>
+      <div class="scen"><div class="name">Interruption</div>
+        <div class="r"><b>Scenario:</b> the user cuts in mid-reply with a different request.</div>
+        <div class="r"><b>Expected:</b> the system yields the floor and addresses the new request.</div>
+        <div class="r"><b>Listen for:</b> the system stops its current answer and responds to what was just asked.</div></div>
+    </div>
+    <div class="taskcol"><h3>Spoken-answer accuracy</h3>
+      <div class="scen"><div class="name">Logic puzzle</div>
+        <div class="r"><b>Scenario:</b> the user asks a short reasoning or arithmetic question aloud.</div>
+        <div class="r"><b>Expected:</b> the spoken answer states the correct value.</div>
+        <div class="r"><b>Listen for:</b> the specific answer (for example, “48”), not a restatement of the question.</div>
+        <div class="r"><b>Variant — alternating count:</b> the user and system trade numbers, one each (user 1, system 2, user 3, …). The system must add only its own number in turn, not recite the whole sequence. Shown under Logic puzzle in the samples.</div></div>
+      <div class="scen"><div class="name">Countdown completion</div>
+        <div class="r"><b>Scenario:</b> the user asks the system to count down and finish on an agreed cue.</div>
+        <div class="r"><b>Expected:</b> the system counts down in order and says the cue word.</div>
+        <div class="r"><b>Listen for:</b> “five, four, three, two, one” followed by the right cue, not a paraphrase.</div></div>
+      <div class="scen"><div class="name">Grammar repair</div>
+        <div class="r"><b>Scenario:</b> the user makes a grammatical error mid-sentence, spoken in varied non-native accents.</div>
+        <div class="r"><b>Expected:</b> the system corrects it at the moment it occurs, while the user is still speaking.</div>
+        <div class="r"><b>Listen for:</b> a correction that lands on the error word rather than after the user finishes.</div></div>
+      <div class="scen"><div class="name">Keyword wait <span class="small muted">· restraint</span></div>
+        <div class="r"><b>Scenario:</b> the user reads a list of words and asks the system to speak up only when it hears a target word.</div>
+        <div class="r"><b>Expected:</b> the system stays quiet through the list, then interjects the target word when it appears.</div>
+        <div class="r"><b>Listen for:</b> whether the system takes the floor on the right word — and only then, not on every item.</div></div>
+      <div class="scen"><div class="name">Stay quiet until asked <span class="small muted">· restraint</span></div>
+        <div class="r"><b>Scenario:</b> the user thinks out loud, working through a problem, and only later explicitly asks for help.</div>
+        <div class="r"><b>Expected:</b> the system holds back while the user reasons, then answers correctly once asked.</div>
+        <div class="r"><b>Listen for:</b> silence during the thinking-aloud, then the right answer after the request.</div></div>
+      <div class="scen" style="border:none"><div class="r">Each accuracy item is a multi-turn exchange (the user speaks, the system replies, and so on). The system's spoken response is transcribed and checked against a supplied target — the right answer, the right interjection, or waiting quietly and then answering.</div></div>
+    </div>
+    <div class="taskcol" style="grid-column:1/-1"><h3>Paralinguistic control <span class="small muted">· volume &amp; whisper</span></h3>
+      <div class="scen"><div class="name">Whisper on request</div>
+        <div class="r"><b>Scenario:</b> the user asks the system to whisper its answer (“whisper it — what's seven times eight?”).</div>
+        <div class="r"><b>Expected:</b> the system answers correctly <i>and</i> in a genuine breathy whisper (voice, not just words).</div>
+        <div class="r"><b>Listen for:</b> a soft, airy, unvoiced delivery — not a normal-volume “okay, whispering.” Scored acoustically from the audio (harmonics-to-noise ratio &amp; voicing), so saying it doesn't count.</div></div>
+      <div class="scen" style="border:none"><div class="name">Volume understanding</div>
+        <div class="r"><b>Scenario:</b> the user speaks very softly (a secret, a sleeping baby) or very loudly (noise, distance, urgency).</div>
+        <div class="r"><b>Expected:</b> an appropriate answer to the request; ideally the system also matches the volume (softens when whispered to).</div>
+        <div class="r"><b>Listen for:</b> whether the reply fits the situation, and whether its own loudness adapts to the user's.</div></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- LEADERBOARD -->
+<section id="board"><div class="wrap">
+  <div class="eyebrow">Leaderboard</div>
+  <h2>Per-task ranking</h2>
+  <p class="muted">Each card ranks all six systems by the share of items they handled correctly on that task —
+    higher is better. Timing tasks (backchannel, pause, interruption, keyword-wait, grammar, stay-quiet) score
+    conversational behaviour; reasoning tasks (logic, countdown) score the spoken answer. Select a card to jump
+    to that task's audio examples below.</p>
+  <div id="board-root" class="board-grid"></div>
+</div></section>
+
+<!-- RESULTS -->
+<section id="results"><div class="wrap">
+  <div class="eyebrow">Results</div>
+  <h2>Results</h2>
+  <p class="muted">The three dimensions — reasoning accuracy, conversational timing, and paralinguistic
+    control — are reported in separate tables and are not combined into an overall rank. Each figure is
+    measured over the items in its scenario, among the six systems evaluated here.</p>
+
+  <h3>Spoken-task accuracy — items answered correctly, out of 50</h3>
+  <p class="small muted">Fifty spoken items per system, ten in each of five scenarios: logic questions,
+    countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item
+    counts when the spoken response meets its scenario's target — the right answer, the right interjection,
+    or waiting quietly and then answering.</p>
+  <div class="tbl-wrap"><table id="lb-iq"></table></div>
+  <p class="small muted">The turn-based cascade leads overall, with the hosted real-time APIs close behind;
+    the open real-time models trail sharply — most of their loss is on the two <b>restraint</b> scenarios
+    (keyword-wait and stay-quiet), where always being able to speak becomes a liability. No system completes
+    a grammar-repair item — a proactive real-time correction that remains unsolved and is discussed in the
+    analysis.</p>
+
+  <h3>Conversational timing — per-scenario metric</h3>
+  <p class="small muted">Each column reports one behaviour over that scenario's items; green marks the best
+    value in a column. <b>Backchannel</b>: average brief acknowledgements per conversation (higher is the
+    intended behaviour). <b>Floor-take / Barge-in / Derail</b>: the rate at which the system took the floor
+    during a monologue, started speaking in a mid-sentence pause, or was knocked off its answer by a user
+    backchannel (lower is intended). <b>Turn latency</b>: median time to begin a reply after the user stops.
+    <b>Yield &amp; answer</b>: the rate at which the system, caught mid-speech, stopped and addressed an
+    interruption (higher is intended).</p>
+  <div class="tbl-wrap"><table id="lb-behav"></table></div>
+
+  <h3>Paralinguistic control — whisper &amp; volume</h3>
+  <p class="small muted">Two voice-quality tests. <b>Whisper on request</b> (10 items): the user asks the
+    system to whisper its answer; a reply counts only if it is <b>acoustically a real whisper</b> — breathy,
+    unvoiced, low harmonics-to-noise ratio (HNR &lt; 6&nbsp;dB) — judged from the audio, not from the model
+    merely <i>saying</i> it will whisper. <b>Volume understanding</b> (10 items, 5 whispered + 5 loud): does the
+    system give an appropriate answer to a user speaking very softly or very loudly. <b>Adapt</b> is the share of
+    the 5 whispered prompts on which the system also lowered its own voice in reply.</p>
+  <div class="tbl-wrap"><table id="lb-para"></table></div>
+  <p class="small muted">Whispering on request is the clearest divider: only one system produces a genuine
+    breathy whisper; most just answer aloud (or say “okay, whispering” without changing their voice). Volume
+    <i>understanding</i> is widespread, but <i>adapting</i> one's own volume to match the user is almost absent —
+    understanding a cue and acting on it come apart, as elsewhere in the benchmark.</p>
+
+  <h3>Interaction groundedness — logic held across a long conversation</h3>
+  <p class="small muted">Ten multi-turn conversations (20+ turns each) quietly build real state — a list, a
+    plan, a game — then plant <b>probes</b> that test whether the system stays grounded: does it recall a value
+    it was told, track an update, admit what it was <i>not</i> told instead of inventing it, keep a constraint,
+    attribute who said what, refuse a false premise, and <b>flag a nonsense question</b> rather than fabricating
+    an answer. Each probe is graded from the transcript of what the system actually said; <b>Grounded</b> counts
+    probes answered correctly, and <b>Coherence</b> (0–100) rates how consistent the whole conversation stayed.</p>
+  <div class="tbl-wrap"><table id="lb-ig"></table></div>
+  <p class="small muted">The hosted real-time APIs hold the thread best; the open real-time models fall away
+    sharply on long context — the weakest ignore the conversation and recite generic filler, failing nearly
+    every probe. Flagging nonsense and tracking a changed value are the most common failures across systems.</p>
+</div></section>
+
+<!-- SAMPLES -->
+<section id="samples"><div class="wrap">
+  <div class="eyebrow">Listen</div>
+  <h2>Hear it for yourself</h2>
+  <p class="muted">The same recording is played to all six systems, so any difference comes from the system.
+    Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
+    button is a two-track timeline: <span style="color:var(--user);font-weight:600">user</span> on top,
+    <span style="color:var(--model);font-weight:600">model</span> on the bottom, and
+    <span style="color:var(--overlap);font-weight:600">red</span> where they talk over each other.
+    Click anywhere on a strip to move the cursor there; press ▶ to play from that point.</p>
+  <div id="samples-root"></div>
+</div></section>
+
+<!-- ANALYSIS -->
+<section id="analysis"><div class="wrap">
+  <div class="eyebrow">Analysis</div>
+  <h2>Analysis</h2>
+  <p class="muted">Each reading below is scoped to the six systems and twelve scenarios evaluated here. The
+    reasoning set is a few narrow task types and should not be read as general intelligence.</p>
+  <div class="finding"><div class="n">1</div><div>
+    <h3>Timing behaviour does not predict reasoning-task accuracy</h3>
+    <p class="muted">The two measures come apart. Moshi produced 3.22 backchannels per conversation but
+      answered 2 of 30 reasoning items; GPT-Realtime produced 0.50 backchannels and answered 20 of 30.
+      A system that manages turns well is therefore not, on this evidence, a system that answers well —
+      the two are worth reporting separately rather than as a single score.</p></div></div>
+  <div class="finding"><div class="n">2</div><div>
+    <h3>The turn-based cascade preserves reasoning but mishandles pauses</h3>
+    <p class="muted">The cascade answered 17 of 30 reasoning items, competitive with the hosted systems on
+      these short tasks — its language-model component is the same kind of part. But it began speaking in
+      every evaluated mid-sentence pause, because a fixed endpoint reads a pause as the end of a turn.
+      Because answer quality and timing here move in opposite directions, its timing failures appear to
+      come from endpointing rather than from answer generation.</p></div></div>
+  <div class="finding"><div class="n">3</div><div>
+    <h3>Proactive grammar repair remains unresolved</h3>
+    <p class="muted">No evaluated system completed a grammar-repair item. That scenario asks the system to
+      correct the user during their own sentence, which requires listening while speaking <i>and</i> the
+      initiative to interject on the error word. It is the one scenario that grades content and interruption
+      timing together, and none of the six systems produced both at once.</p></div></div>
+</div></section>
+
+<!-- METHOD -->
+<section id="method"><div class="wrap">
+  <div class="eyebrow">Methodology</div>
+  <h2>How an item is built and scored</h2>
+  <p class="muted">Two language models take part: one expands a seed card into dialogue, and one judges
+    spoken content against a target. What sits between them is derived by rule — the expected action, the
+    timing window, the overlap requirement, and the target answer are computed separately from the model
+    that wrote the dialogue, so the scorecard does not depend on the generator's own judgement.</p>
+  <div class="flow">
+    <span class="step">seed card</span><span class="arrow">→(LLM)→</span>
+    <span class="step">choreography</span><span class="arrow">→(rules)→</span>
+    <span class="step">benchmark.json</span><span class="arrow">→(TTS)→</span>
+    <span class="step">user turns A1/A2</span><span class="arrow">→</span>
+    <span class="step">live model</span><span class="arrow">→</span>
+    <span class="step">dual-track record</span><span class="arrow">→</span>
+    <span class="step">Parakeet + VAD</span><span class="arrow">→</span>
+    <span class="step">4-dim grade</span>
+  </div>
+
+  <h3>1 · Scripting the A→B→A→B exchange</h3>
+  <p class="muted">An LLM (MiMo <code>mimo-v2.5-pro</code>) expands a one-line task <i>card</i>
+    (category + trigger + target) into a short <b>choreography</b> — an ordered list of user (A) and
+    assistant (B) turns, each tagged with timing cues: <code>anchor</code> (the exact word in the other
+    speaker's line the reply keys off), <code>ov</code> (how deep into that line the anchor sits, 0–1),
+    and <code>cut</code> (the reply barges in and truncates). These cues encode <i>when</i> a good
+    assistant should act — not just what to say.</p>
+  <div class="codeblock"><span class="k">choreography</span> — one B line (grammar repair)
+{"speaker":"B", "text":"You mean 'I have been' to Paris.", "anchor":"went", "ov":0.5, "cut":true}</div>
+
+  <h3>2 · Deriving the expected action and target answer</h3>
+  <p class="muted">The scorecard <code>benchmark.json</code> is computed by rule from the category policy,
+    the seed card, and the choreography's anchor. The generator writes the lines, but the expected action
+    and target answer are set separately from it. Each graded event pins the expected floor-control action,
+    the onset window, whether overlap is required, and the target response:</p>
+  <div class="codeblock"><span class="k">benchmark.json</span> — grammar_correction · event e1
+expected_action : INTERRUPT          onset_window_ms : [50, 300]  (after "went")
+expected_overlap: required           target_response : "I have been to Paris."</div>
+  <p class="small muted">The eight floor-control actions a real-time system is scored against:
+    <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>.</p>
+
+  <h3>3 · Aligning ASR to audio to score it</h3>
+  <p class="muted">User turns are rendered with MiMo TTS (voice “Mia”, 24&nbsp;kHz) and streamed to each
+    live model; both sides are recorded to separate tracks. <b>Parakeet</b> gives word-level timestamps
+    and <b>WebRTC-VAD</b> gives speech boundaries — so we locate the trigger word in the user track and
+    the assistant's first word in its track to the tens of milliseconds. Four dimensions fall out:</p>
+  <ul class="mlist">
+    <li><b>Timing</b> — assistant's response onset minus the trigger-word end, checked against the window.</li>
+    <li><b>Overlap</b> — did the reply land while the user was still talking (<i>required</i>) or wait for a gap (<i>forbidden</i>).</li>
+    <li><b>Content</b> — Gemini checks the reply against the <b>known correct answer</b> with a per-category
+      rubric, and is told to <i>compare, not re-solve</i> — e.g. a logic puzzle passes only if the answer
+      actually states “48”. Reasoning tasks judge the transcribed answer; timing tasks judge the sliced audio.</li>
+    <li><b>Silence</b> — for wait-type tasks, did the model correctly stay quiet until the trigger.</li>
+  </ul>
+  <p class="small muted">The word-by-word highlight under each sample above <i>is</i> that same Parakeet
+    alignment, played back live — the transcript lights up in lock-step with the audio.</p>
+  <p class="small muted">The turn-based cascade is run offline with the same building blocks
+    (voice-activity endpointing → Parakeet ASR → MiMo language model → MiMo TTS) and scored by the same harness.</p>
+</div></section>
+
+<!-- LIMITATIONS -->
+<section id="limitations"><div class="wrap">
+  <div class="eyebrow">Limitations</div>
+  <h2>Limitations</h2>
+  <p class="muted">These boundaries mark where the current evidence stops.</p>
+  <ul class="mlist">
+    <li>English only, with a single synthesized user voice.</li>
+    <li>Twelve focused scenario types rather than general task coverage; the reasoning set is a few narrow task types and is not a measure of general intelligence.</li>
+    <li>Scoring depends on automated ASR alignment and an LLM content judge, both of which can be wrong on a given item.</li>
+    <li>Latency includes provider-API and network effects that vary between runs and are not controlled here.</li>
+    <li>One particular turn-based cascade configuration; a different endpoint or language model would move its numbers.</li>
+    <li>No evaluation of naturalness, prosody, safety, tool use, or long-horizon task completion.</li>
+  </ul>
+</div></section>
+
+<!-- CITATION -->
+<section id="cite"><div class="wrap">
+  <div class="eyebrow">Citation</div>
+  <h2>Authors &amp; citation</h2>
+  <p class="muted">InteractionBench is developed at AveraLabs by Richard Yucheng He, Chen Xu, Yihang Liu,
+    and Tairan Chen. The repository link points to the AveraLabs organization until the InteractionBench
+    repository is public.</p>
+  <div class="codeblock">@misc{averalabs2026interactionbench,
+  title  = {InteractionBench: Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems},
+  author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen},
+  year   = {2026},
+  url    = {https://github.com/avera-labs},
+}</div>
+</div></section>
+
+<footer><div class="wrap">
+  <p><b>InteractionBench</b> · AveraLabs · Richard Yucheng He, Chen Xu, Yihang Liu, Tairan Chen · 2026 ·
+    <a href="https://github.com/avera-labs">github.com/avera-labs</a></p>
+  <p class="small">Audio samples are model outputs, shown as evidence for research.</p>
+</div></footer>
+
+<script>
+const TASK_LABEL = {
+  backchannel:"Backchannel", pause:"Pause handling", turn_taking:"Turn-taking",
+  user_backchannel:"User backchannel", interruption:"Interruption",
+  logic_puzzle:"Logic puzzle", countdown_completion:"Countdown",
+  grammar_correction:"Grammar repair",
+  keyword_wait:"Keyword wait", stay_quiet_until_help:"Stay quiet until asked",
+  alternating_count:"Alternating count",
+  whisper_production:"Whisper on request", volume_understanding:"Volume understanding",
+  interaction_groundedness:"Interaction groundedness"};
+const SYS_COLOR = {gpt:"#4c51bf",gemini:"#2b6cb0",moshi:"#38a169",personaplex:"#2f855a",
+  freezeomni:"#805ad5",halfduplex:"#b7791f"};
+const fmtPct = v => v==null ? "—" : Math.round(v*100)+"%";
+const TASK_DESC = {
+  backchannel:"gave short acknowledgements without grabbing the floor",
+  pause:"waited through a mid-sentence pause instead of barging in",
+  turn_taking:"took its turn promptly and cleanly",
+  user_backchannel:"stayed on track when the user said “uh-huh”",
+  interruption:"yielded and answered when the user cut in",
+  logic_puzzle:"answered the spoken reasoning question correctly",
+  countdown_completion:"completed the multi-step count correctly",
+  grammar_correction:"interrupted to correct a grammar mistake (accented speech)",
+  keyword_wait:"jumped in when the target keyword was spoken",
+  stay_quiet_until_help:"stayed silent until asked, then answered",
+  alternating_count:"kept the alternating count correct",
+  whisper_production:"whispered on request and still answered correctly",
+  volume_understanding:"answered appropriately to a very soft / very loud voice"};
+const MEDAL = ["🥇","🥈","🥉"];
+function buildBoard(M){
+  const root = document.getElementById("board-root");
+  const tasks = [...M.behav_tasks, ...M.iq_tasks, ...(M.para_tasks||[])].filter(t => M.leaderboards[t]);
+  root.innerHTML = tasks.map(t => {
+    const lb = M.leaderboards[t];
+    const rows = M.systems.map(s => ({id:s.id, label:s.label, pr:(lb[s.id]||{}).pass_rate}))
+      .filter(r => r.pr != null).sort((a,b) => b.pr - a.pr);
+    if(!rows.length) return "";
+    const body = rows.map((r,i) => {
+      const col = r.pr>=0.7 ? "var(--good)" : r.pr>=0.4 ? "var(--warn)" : "var(--bad)";
+      return `<div class="brow${i===0?" top1":""}">
+        <span class="brank">${i<3?MEDAL[i]:i+1}</span>
+        <span class="bsys"><span class="dot" style="background:${SYS_COLOR[r.id]}"></span>${r.label}</span>
+        <span class="bpct" style="color:${col}">${Math.round(r.pr*100)}%</span></div>`;
+    }).join("");
+    return `<div class="bcard clickable" data-task="${t}" tabindex="0" role="button"
+      title="Jump to the ${TASK_LABEL[t]||t} audio samples"><div class="bhead"><div class="btask">${TASK_LABEL[t]||t} <span class="jump">listen ↓</span></div>
+      <div class="bmetric">% that ${TASK_DESC[t]||"did the task correctly"}</div></div>${body}</div>`;
+  }).join("");
+  // click a card (or Enter) → scroll to the matching audio samples
+  const go = t => { const el=document.getElementById("sample-"+t); if(el) el.scrollIntoView({behavior:"smooth",block:"start"}); };
+  root.querySelectorAll(".bcard.clickable").forEach(c => {
+    c.addEventListener("click", () => go(c.dataset.task));
+    c.addEventListener("keydown", e => { if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(c.dataset.task); } });
+  });
+}
+
+let audios = [];               // for single-play enforcement
+function stopAll(except){ audios.forEach(a=>{ if(a!==except){a.pause();} }); }
+
+fetch("data/manifest.json",{cache:"no-store"}).then(r=>r.json()).then(M=>{
+  buildBoard(M); buildIQ(M); buildBehav(M); buildPara(M); buildIG(M); buildSamples(M);
+}).catch(e=>{ document.getElementById("samples-root").innerHTML =
+  "<p class='muted'>Could not load data/manifest.json — run <code>build_site_data.py</code> and serve over http.</p>"; });
+
+function sysLabel(M,id){ return (M.systems.find(s=>s.id===id)||{}).label||id; }
+
+/* ---- IQ leaderboard ---- */
+function buildIQ(M){
+  const iq=M.iq_tasks, N=iq.length*10, rows=M.systems.map(s=>{
+    let tot=0, cells=iq.map(t=>{const np=(M.leaderboards[t][s.id]||{}).npass||0; tot+=np; return np;});
+    return {id:s.id,label:s.label,cells,tot};
+  }).sort((a,b)=>b.tot-a.tot);
+  const max=Math.max(...rows.map(r=>r.tot));
+  let h="<thead><tr><th>System</th>"+iq.map(t=>`<th class=num>${TASK_LABEL[t]}</th>`).join("")+
+    `<th class=num>Total / ${N}</th></tr></thead><tbody>`;
+  rows.forEach(r=>{
+    h+=`<tr><td class=sysname><span class=dot style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${SYS_COLOR[r.id]};margin-right:7px"></span>${r.label}</td>`+
+       r.cells.map(c=>`<td class=num>${c}</td>`).join("")+
+       `<td class=num><b class="${r.tot===max?'rank1':''}">${r.tot}</b>`+
+       `<span class=bar style="width:${44*r.tot/N}px"></span></td></tr>`;
+  });
+  document.getElementById("lb-iq").innerHTML=h+"</tbody>";
+}
+
+/* ---- behavioural leaderboard ---- */
+function buildBehav(M){
+  // columns: metric key + higher-is-better + formatter
+  const COLS=[
+    {t:"backchannel",k:"avg_bc",hi:true,label:"Backchannel ▲",fmt:v=>v==null?"—":v.toFixed(2)},
+    {t:"backchannel",k:"floor_take",hi:false,label:"Floor-take ▼",fmt:fmtPct},
+    {t:"pause",k:"bargein",hi:false,label:"Barge-in ▼",fmt:fmtPct},
+    {t:"turn_taking",k:"med_lat",hi:false,label:"Turn latency ▼",fmt:v=>v==null?"—":Math.round(v)+"ms"},
+    {t:"user_backchannel",k:"derail",hi:false,label:"Derail ▼",fmt:fmtPct},
+    {t:"interruption",k:"addressed",hi:true,label:"Yield&answer ▲",fmt:fmtPct},
+  ];
+  // best value per column for green highlight
+  const best=COLS.map(c=>{
+    const vals=M.systems.map(s=>(M.leaderboards[c.t][s.id]||{})[c.k]).filter(v=>v!=null);
+    if(!vals.length) return null;
+    return c.hi?Math.max(...vals):Math.min(...vals);
+  });
+  // overall timing score = items handled well across the five timing scenarios
+  const TT=M.timing_totals||{}; const tt=s=>(TT[s]||{}).good||0; const tn=s=>(TT[s]||{}).n||0;
+  const Nt=Math.max(...M.systems.map(s=>tn(s.id))), maxTt=Math.max(...M.systems.map(s=>tt(s.id)));
+  const rows=[...M.systems].sort((a,b)=>tt(b.id)-tt(a.id));
+  let h="<thead><tr><th>System</th>"+COLS.map(c=>`<th class=num>${c.label}</th>`).join("")+
+    `<th class=num>Timing score ▲</th></tr></thead><tbody>`;
+  rows.forEach(s=>{
+    h+=`<tr><td class=sysname><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${SYS_COLOR[s.id]};margin-right:7px"></span>${s.label}</td>`;
+    COLS.forEach((c,i)=>{
+      const v=(M.leaderboards[c.t][s.id]||{})[c.k];
+      const isBest = v!=null && best[i]!=null && Math.abs(v-best[i])<1e-9;
+      h+=`<td class=num${isBest?' style="color:var(--good);font-weight:700"':''}>${c.fmt(v)}</td>`;
+    });
+    const g=tt(s.id), n=tn(s.id);
+    h+=`<td class=num><b class="${g===maxTt?'rank1':''}">${g}</b><span class=small muted> / ${n}</span>`+
+       `<span class=bar style="width:${Nt?44*g/Nt:0}px"></span></td></tr>`;
+  });
+  document.getElementById("lb-behav").innerHTML=h+"</tbody>";
+}
+
+/* ---- paralinguistic (whisper / volume) leaderboard ---- */
+function buildPara(M){
+  const el=document.getElementById("lb-para"); if(!el||!M.para_tasks) return;
+  const W="whisper_production", V="volume_understanding";
+  const COLS=[
+    {k:s=>`${(M.leaderboards[W][s]||{}).whisper??0}/10`, label:"Whisper ▲", v:s=>(M.leaderboards[W][s]||{}).whisper||0, hi:true},
+    {k:s=>`${(M.leaderboards[V][s]||{}).understanding??0}/10`, label:"Volume underst. ▲", v:s=>(M.leaderboards[V][s]||{}).understanding||0, hi:true},
+    {k:s=>`${(M.leaderboards[V][s]||{}).adapt??0}/5`, label:"Adapt ▲", v:s=>(M.leaderboards[V][s]||{}).adapt||0, hi:true},
+  ];
+  const best=COLS.map(c=>Math.max(...M.systems.map(s=>c.v(s.id))));
+  const total=s=>COLS.reduce((a,c)=>a+c.v(s),0);   // total = whisper + volume + adapt (max 25)
+  const maxT=Math.max(...M.systems.map(s=>total(s.id)));
+  let h="<thead><tr><th>System</th>"+COLS.map(c=>`<th class=num>${c.label}</th>`).join("")+
+    `<th class=num>Voice score / 25 ▲</th></tr></thead><tbody>`;
+  const rows=[...M.systems].sort((a,b)=>total(b.id)-total(a.id));   // sort by total
+  rows.forEach(s=>{
+    h+=`<tr><td class=sysname><span class=dot style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${SYS_COLOR[s.id]};margin-right:7px"></span>${s.label}</td>`;
+    COLS.forEach((c,i)=>{ const isBest=c.v(s.id)===best[i]&&best[i]>0;
+      h+=`<td class=num${isBest?' style="color:var(--good);font-weight:700"':''}>${c.k(s.id)}</td>`; });
+    const t=total(s.id);
+    h+=`<td class=num><b class="${t===maxT?'rank1':''}">${t}</b><span class=bar style="width:${25?44*t/25:0}px"></span></td></tr>`;
+  });
+  el.innerHTML=h+"</tbody>";
+}
+
+/* ---- interaction groundedness (long multi-turn logic) leaderboard ---- */
+function buildIG(M){
+  const el=document.getElementById("lb-ig"); const IG=M.ig_task; if(!el||!IG||!M.leaderboards[IG]) return;
+  const lb=M.leaderboards[IG];
+  const rows=[...M.systems].map(s=>{const m=lb[s.id]||{};
+    return {id:s.id,label:s.label,npass:m.npass||0,np:m.n_probes||0,rate:m.pass_rate||0,coh:m.coherence};})
+    .filter(r=>r.np>0).sort((a,b)=>b.rate-a.rate);
+  const maxNp=Math.max(...rows.map(r=>r.np),1), maxR=Math.max(...rows.map(r=>r.rate));
+  let h="<thead><tr><th>System</th><th class=num>Grounded ▲</th><th class=num>Pass rate ▲</th>"+
+    "<th class=num>Coherence ▲</th></tr></thead><tbody>";
+  rows.forEach(r=>{
+    const best=r.rate===maxR;
+    h+=`<tr><td class=sysname><span class=dot style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${SYS_COLOR[r.id]};margin-right:7px"></span>${r.label}</td>`+
+       `<td class=num>${r.npass}/${r.np}</td>`+
+       `<td class=num${best?' style="color:var(--good);font-weight:700"':''}>${Math.round(r.rate*100)}%`+
+       `<span class=bar style="width:${44*r.rate}px"></span></td>`+
+       `<td class=num>${r.coh==null?"—":r.coh}</td></tr>`;
+  });
+  el.innerHTML=h+"</tbody>";
+}
+
+/* one-line reminder shown above each scenario's audio group */
+const SCEN_ONELINE = {
+  backchannel:"The user speaks at length; listen for brief acknowledgements without the system taking the floor.",
+  pause:"The user pauses mid-sentence; listen for whether the system waits or starts speaking in the gap.",
+  turn_taking:"The user finishes and stops; listen for a prompt, clean start.",
+  user_backchannel:"The user drops a short backchannel (“mhm,” “right,” “ok”) mid-answer; listen for whether the system keeps its thread.",
+  interruption:"The user cuts in with a new request; listen for whether the system yields and addresses it.",
+  logic_puzzle:"A spoken reasoning question; listen for the specific correct answer.",
+  countdown_completion:"A countdown request; listen for the ordered count and the agreed cue word.",
+  grammar_correction:"The user makes an error mid-sentence, in varied non-native accents; listen for a correction placed on the error word.",
+  keyword_wait:"The user reads a list and asks the system to speak up on a target word; listen for whether it interjects the right word and only then.",
+  stay_quiet_until_help:"The user thinks out loud and only later asks for help; listen for whether the system stays quiet until asked, then answers correctly.",
+  whisper_production:"The user asks the system to whisper its answer; listen for whether the reply is a genuine breathy whisper — and still the right answer.",
+  volume_understanding:"The user speaks very softly (a secret) or very loudly (noise/urgency); listen for whether the system answers appropriately, and whether it matches the volume.",
+  interaction_groundedness:"A long conversation builds real state, then probes it — including nonsense questions; listen (and read the transcript) for whether the system stays grounded or invents a confident, ungrounded answer."};
+
+/* ---- samples ---- */
+function buildSamples(M){
+  const root=document.getElementById("samples-root");
+  const order=[...M.behav_tasks,...M.iq_tasks,...(M.para_tasks||[]),...(M.ig_task?[M.ig_task]:[])];
+  order.forEach(task=>{
+    const exs=M.examples[task]||[]; if(!exs.length) return;
+    const head=document.createElement("h3"); head.textContent=TASK_LABEL[task];
+    head.id="sample-"+task; head.style.scrollMarginTop="16px"; root.appendChild(head);
+    if(SCEN_ONELINE[task]){ const p=document.createElement("p");
+      p.className="muted small"; p.style.margin="-6px 0 6px"; p.textContent=SCEN_ONELINE[task]; root.appendChild(p); }
+    exs.forEach(ex=>root.appendChild(exampleBlock(M,task,ex)));
+  });
+}
+
+function exampleBlock(M,task,ex){
+  const box=document.createElement("div"); box.className="ex";
+  // find a user-side prompt to show (from any cell's transcript is model side; use item id)
+  const head = ex.label ? ex.label : `${TASK_LABEL[task]} · item ${ex.item}`;
+  box.innerHTML=`<div class=prompt>${head}</div>`+
+    `<div class=legend>
+      <span><span class="sw" style="background:var(--user)"></span>user</span>
+      <span><span class="sw" style="background:var(--model)"></span>model</span>
+      <span><span class="sw" style="background:var(--overlap)"></span>overlap (talking over each other)</span>
+    </div>`;
+  ex.cells.forEach(c=>box.appendChild(cellRow(M,c)));
+  return box;
+}
+
+function cellRow(M,c){
+  const row=document.createElement("div"); row.className="row";
+  const dur=c.timeline.dur||1;
+  const segHTML=(arr,cls)=>arr.map(([s,e])=>
+    `<div class="seg ${cls}" style="left:${100*s/dur}%;width:${Math.max(0.6,100*(e-s)/dur)}%"></div>`).join("");
+  const ovHTML=c.timeline.overlap.map(([s,e])=>
+    `<div class="ov" style="left:${100*s/dur}%;width:${Math.max(0.6,100*(e-s)/dur)}%"></div>`).join("");
+  row.innerHTML=`
+    <div class=rsys><span class=dot style="background:${SYS_COLOR[c.system]}"></span>${sysLabel(M,c.system)}</div>
+    <button class=play title="play">▶</button>
+    <div class=tl>
+      <div class="band u"></div><div class="band m"></div>
+      ${segHTML(c.timeline.user,"u")}${segHTML(c.timeline.model,"m")}${ovHTML}
+      <span class="lbl u">U</span><span class="lbl m">M</span>
+      <div class=ph></div>
+    </div>
+    <div class="verdict ${c.cls}">${c.badge}</div>`;
+  // judge's reasoning: rows judged wrong/uncertain permanently show "why" (auditable)
+  if(c.reason && c.cls!=="good"){
+    const why=document.createElement("div"); why.className="why "+c.cls; why.textContent=c.reason;
+    row.appendChild(why);
+  }
+  // transcript — long multi-turn (IG) uses the clean dialogue computed server-side (user turns split by the script's known turn count, model sentences split by pauses);
+  // other tasks: split each track into turns by >0.6s pauses, then order by start time (fine for short dialogues, keeps sentences intact).
+  let allTurns;
+  if(c.dialogue && c.dialogue.length){
+    allTurns=c.dialogue.map(t=>({spk:t.spk, t0:t.t0, t1:t.t1, silent:t.silent,
+      words:(t.words||[]).map(x=>({w:x[0],t0:x[1],t1:x[2]}))}));
+  } else {
+    const toTurns=(arr,spk)=>{ const out=[]; let cur=null;
+      arr.forEach(x=>{ const wd={w:x[0],t0:x[1],t1:x[2]};
+        if(cur && wd.t0-cur.t1<=0.6){ cur.t1=wd.t1; cur.words.push(wd); }
+        else { cur={spk, t0:wd.t0, t1:wd.t1, words:[wd]}; out.push(cur); } }); return out; };
+    allTurns=[...toTurns(c.words||[],"m"), ...toTurns(c.uwords||[],"u")].sort((a,b)=>a.t0-b.t0);
+  }
+  let flat=[];                                            // {sp,t0,t1} for all words, used for highlighting (supports lighting up both words when they overlap)
+  if(allTurns.length || c.heard){
+    const box=document.createElement("div"); box.className="trans";
+    if(allTurns.length){
+      let maxEnd=null;
+      allTurns.forEach(tn=>{
+        if(maxEnd!==null && tn.t0-maxEnd>0.5){           // only real silence relative to "all prior turns" counts as a gap
+          const g=document.createElement("div"); g.className="gap"; g.textContent=(tn.t0-maxEnd).toFixed(1)+"s"; box.appendChild(g);
+        }
+        const line=document.createElement("div"); line.className="tline";
+        const lab=document.createElement("span"); lab.className="tlab "+tn.spk;
+        lab.textContent=tn.spk==="u"?"you":"model"; line.appendChild(lab);
+        if(tn.silent){                                   // the model didn't speak this turn (keep the turn-by-turn rhythm)
+          const s=document.createElement("span"); s.className="w";
+          s.style.opacity=".45"; s.style.fontStyle="italic"; s.textContent="— no reply —"; line.appendChild(s);
+        } else {
+          tn.words.forEach(x=>{ const sp=document.createElement("span"); sp.className=tn.spk==="u"?"w wu":"w";
+            sp.textContent=x.w+" "; line.appendChild(sp); flat.push({sp, t0:x.t0, t1:x.t1}); });
+        }
+        box.appendChild(line);
+        maxEnd=Math.max(maxEnd??0, tn.t1);
+      });
+    } else { const l=document.createElement("div"); l.className="tline";
+      l.innerHTML='<span class="tlab m">model</span>“'+c.heard.slice(0,200)+'”'; box.appendChild(l); }
+    row.appendChild(box);
+  }
+  // audio + timeline + word-by-word highlight (can light up both user+model words when overlapping)
+  const audio=new Audio(); audio.preload="none"; audios.push(audio);
+  const btn=row.querySelector(".play"), tl=row.querySelector(".tl"), ph=row.querySelector(".ph");
+  let raf=null, active=new Set(), seekT=null;   // seekT = the click-set playback start position (seconds)
+  // on first interaction, fetch the whole mp3 as a blob (entire file in memory) so any seek doesn't depend on server Range support
+  let loading=null;
+  function ensure(){ if(loading) return loading;
+    loading=fetch(c.audio).then(r=>r.blob()).then(b=>{audio.src=URL.createObjectURL(b);})
+      .catch(()=>{audio.src=c.audio;}); return loading; }
+  function hi(t){
+    const next=new Set();
+    for(let k=0;k<flat.length;k++){ if(t>=flat[k].t0-0.05 && t<flat[k].t1+0.08) next.add(k); }
+    active.forEach(k=>{ if(!next.has(k)) flat[k].sp.classList.remove("on"); });
+    next.forEach(k=>{ if(!active.has(k)) flat[k].sp.classList.add("on"); });
+    active=next;
+  }
+  function clearHi(){ active.forEach(k=>flat[k].sp.classList.remove("on")); active=new Set(); }
+  function tick(){ const t=audio.currentTime; ph.style.left=(100*Math.min(1,t/dur))+"%"; hi(t);
+    if(!audio.paused){ raf=requestAnimationFrame(tick); } }
+  // press ▶: first ensure the whole clip is fetched as a blob, then start from the click-set position
+  function playFrom(){ if(seekT!=null && Math.abs(audio.currentTime-seekT)>0.25){ try{ audio.currentTime=seekT; }catch(e){} } audio.play(); }
+  btn.onclick=()=>{ if(audio.paused){ stopAll(audio); ensure().then(playFrom); } else audio.pause(); };
+  audio.onplay=()=>{ btn.classList.add("playing"); tl.classList.add("playing"); btn.textContent="❚❚";
+    row.querySelector(".trans")?.classList.add("show"); tick(); };
+  audio.onpause=()=>{ btn.classList.remove("playing"); tl.classList.remove("playing"); tl.classList.add("seeked");
+    btn.textContent="▶"; cancelAnimationFrame(raf); };   // after pausing, the cursor stays at the current position and remains visible
+  audio.onended=()=>{ audio.onpause(); tl.classList.remove("seeked"); ph.style.left="0%"; seekT=null; clearHi(); };
+  // click anywhere on the timeline: move the cursor there, remember the position, keep it shown; seek once the blob is ready (clicking ahead mid-playback continues from there, not the start)
+  tl.onclick=e=>{ const r=tl.getBoundingClientRect(); const frac=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));
+    seekT=dur*frac; ph.style.left=(100*frac)+"%"; tl.classList.add("seeked"); hi(seekT);
+    ensure().then(()=>{ try{ audio.currentTime=seekT; }catch(err){} }); };
+  return row;
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1648 @@
+{
+ "meta": {
+  "benchmark": "Interaction Groundedness (generated)",
+  "spec": "test.md + long_conversations.md",
+  "count": 10,
+  "labels": [
+   "HISTORY_HALLUCINATION",
+   "SPEAKER_MISATTRIBUTION",
+   "FALSE_ACTION_CLAIM",
+   "UNKNOWN_INFO_HALLUCINATION",
+   "STALE_TURN_RESPONSE",
+   "REFERENCE_ERROR",
+   "CONSTRAINT_DROP",
+   "STATE_UPDATE_FAILURE",
+   "FALSE_PREMISE_ACCEPTANCE",
+   "FAILED_REPAIR",
+   "SELF_CONTRADICTION",
+   "NON_SEQUITUR",
+   "NONSENSE_NOT_FLAGGED"
+  ],
+  "probe_types": [
+   "recall",
+   "state_update",
+   "unknown",
+   "reference",
+   "speaker",
+   "constraint",
+   "false_action",
+   "false_accusation",
+   "genuine_correction",
+   "stale_turn",
+   "nonsense"
+  ]
+ },
+ "scenarios": [
+  {
+   "title": "Grocery List Builder",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Understood. How can I help?"
+    },
+    {
+     "speaker": "user",
+     "text": "I need to start a grocery list."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, what's first?"
+    },
+    {
+     "speaker": "user",
+     "text": "Add milk to the list."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Milk added."
+    },
+    {
+     "speaker": "user",
+     "text": "And a dozen eggs."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Eggs added."
+    },
+    {
+     "speaker": "user",
+     "text": "Actually, make the milk two cartons."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two cartons of milk."
+    },
+    {
+     "speaker": "user",
+     "text": "Also, some gluten-free bread."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Gluten-free bread added."
+    },
+    {
+     "speaker": "user",
+     "text": "How many milks did I add?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Two cartons.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two cartons."
+    },
+    {
+     "speaker": "user",
+     "text": "What store should I go to for these items?",
+     "probe": {
+      "type": "unknown",
+      "expected": "You haven't said yet.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "You haven't said yet."
+    },
+    {
+     "speaker": "user",
+     "text": "What kind of bread is on the list?",
+     "probe": {
+      "type": "constraint",
+      "expected": "Gluten-free bread.",
+      "must_not": [
+       "CONSTRAINT_DROP"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Gluten-free bread."
+    },
+    {
+     "speaker": "user",
+     "text": "What flavor is the shopping list?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "That doesn't make sense.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "That's not really a flavor."
+    },
+    {
+     "speaker": "user",
+     "text": "Did you remind me to go to the store?",
+     "probe": {
+      "type": "false_action",
+      "expected": "No, I didn't.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, I didn't."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "milk: 2 cartons",
+     "eggs: 1 dozen",
+     "bread: 1 loaf, gluten-free"
+    ],
+    "unknown": [
+     "store",
+     "time"
+    ],
+    "state": {
+     "shopping_list": {
+      "milk": {
+       "quantity": 2,
+       "unit": "cartons"
+      },
+      "eggs": {
+       "quantity": 1,
+       "unit": "dozen"
+      },
+      "bread": {
+       "quantity": 1,
+       "type": "gluten-free"
+      }
+     }
+    },
+    "constraints": [
+     "bread_type: gluten-free"
+    ]
+   },
+   "id": "IG-gen-01"
+  },
+  {
+   "title": "Vacation Planning Discussion",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it. I'm ready."
+    },
+    {
+     "speaker": "user",
+     "text": "I'm thinking about a vacation."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Exciting! Where to?"
+    },
+    {
+     "speaker": "user",
+     "text": "How about Paris?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Paris it is."
+    },
+    {
+     "speaker": "user",
+     "text": "Let's aim for next spring."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Next spring works."
+    },
+    {
+     "speaker": "user",
+     "text": "Just myself for this trip."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Solo trip."
+    },
+    {
+     "speaker": "user",
+     "text": "Actually, my friend Sarah might come too."
+    },
+    {
+     "speaker": "assistant",
+     "text": "So two travelers."
+    },
+    {
+     "speaker": "user",
+     "text": "Where are we planning to go?",
+     "probe": {
+      "type": "recall",
+      "expected": "Paris.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Paris."
+    },
+    {
+     "speaker": "user",
+     "text": "Are we going next spring or next summer?",
+     "probe": {
+      "type": "reference",
+      "expected": "Next spring.",
+      "must_not": [
+       "REFERENCE_ERROR"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Next spring."
+    },
+    {
+     "speaker": "user",
+     "text": "How many people are traveling now?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Two.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two."
+    },
+    {
+     "speaker": "user",
+     "text": "Does Paris have seven sides?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "Paris is not a shape.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Paris is not a shape."
+    },
+    {
+     "speaker": "user",
+     "text": "Why did you change the destination to Rome?",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "I never mentioned Rome.",
+      "must_not": [
+       "FALSE_PREMISE_ACCEPTANCE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I never mentioned Rome."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "destination: Paris",
+     "dates: next spring",
+     "travelers: 2"
+    ],
+    "unknown": [
+     "budget",
+     "activities"
+    ],
+    "state": {
+     "trip": {
+      "destination": "Paris",
+      "dates": "next spring",
+      "travelers": 2
+     }
+    },
+    "constraints": []
+   },
+   "id": "IG-gen-02"
+  },
+  {
+   "title": "Recipe Search with Dietary Needs",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Right. How can I assist?"
+    },
+    {
+     "speaker": "user",
+     "text": "I want to cook something fun tonight."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, what's on your mind?"
+    },
+    {
+     "speaker": "user",
+     "text": "Chicken, definitely."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it, chicken."
+    },
+    {
+     "speaker": "user",
+     "text": "But no dairy for me."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Dairy-free chicken."
+    },
+    {
+     "speaker": "user",
+     "text": "Thinking something Thai."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Thai chicken. Good choice."
+    },
+    {
+     "speaker": "user",
+     "text": "And not too spicy, please."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it: mild."
+    },
+    {
+     "speaker": "user",
+     "text": "What kind of recipes are we looking for?",
+     "probe": {
+      "type": "constraint",
+      "expected": "Mild, dairy-free Thai chicken.",
+      "must_not": [
+       "CONSTRAINT_DROP"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Mild, dairy-free Thai chicken."
+    },
+    {
+     "speaker": "user",
+     "text": "How long does the recipe take to cook?",
+     "probe": {
+      "type": "unknown",
+      "expected": "You haven't specified.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "You haven't specified."
+    },
+    {
+     "speaker": "user",
+     "text": "Did you send me a shopping list for it?",
+     "probe": {
+      "type": "false_action",
+      "expected": "No, I didn't.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, I didn't."
+    },
+    {
+     "speaker": "user",
+     "text": "Can a chicken recipe hum a tune?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "Recipes can't hum.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Recipes can't hum."
+    },
+    {
+     "speaker": "user",
+     "text": "Did I say I like spicy food?",
+     "probe": {
+      "type": "speaker",
+      "expected": "No, you said 'not too spicy'.",
+      "must_not": [
+       "SPEAKER_MISATTRIBUTION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, you said 'not too spicy'."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "dish_type: chicken",
+     "cuisine: Thai",
+     "dietary_restriction: dairy-free",
+     "spice_preference: mild"
+    ],
+    "unknown": [
+     "cooking_time"
+    ],
+    "state": {
+     "recipe_search": {
+      "main_ingredient": "chicken",
+      "cuisine": "Thai",
+      "dietary_restrictions": [
+       "dairy-free"
+      ],
+      "spice_preference": "mild"
+     }
+    },
+    "constraints": [
+     "dairy-free",
+     "mild_spice"
+    ]
+   },
+   "id": "IG-gen-03"
+  },
+  {
+   "title": "Task and Reminder Management",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Ready when you are."
+    },
+    {
+     "speaker": "user",
+     "text": "I need to add some tasks."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, what's the first?"
+    },
+    {
+     "speaker": "user",
+     "text": "Remind me to call Mom tomorrow."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Calling Mom, tomorrow. Done."
+    },
+    {
+     "speaker": "user",
+     "text": "And buy groceries on Friday."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Groceries Friday. Added."
+    },
+    {
+     "speaker": "user",
+     "text": "Actually, change calling Mom to Wednesday instead."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Mom call changed to Wednesday."
+    },
+    {
+     "speaker": "user",
+     "text": "When should I call Mom now?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Wednesday.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Wednesday."
+    },
+    {
+     "speaker": "user",
+     "text": "What day is the grocery reminder?",
+     "probe": {
+      "type": "recall",
+      "expected": "Friday.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Friday."
+    },
+    {
+     "speaker": "user",
+     "text": "Why did you delete my \"pay bills\" task?",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "I never added that.",
+      "must_not": [
+       "FALSE_PREMISE_ACCEPTANCE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I never added that."
+    },
+    {
+     "speaker": "user",
+     "text": "Can a reminder fold laundry?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "Reminders can't do that.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Reminders can't do that."
+    },
+    {
+     "speaker": "user",
+     "text": "Actually, I meant call Dad, not Mom.",
+     "probe": {
+      "type": "genuine_correction",
+      "expected": "Okay, calling Dad.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, calling Dad."
+    },
+    {
+     "speaker": "user",
+     "text": "Great, thanks for updating."
+    },
+    {
+     "speaker": "assistant",
+     "text": "You're welcome."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "task: call Dad, Wednesday",
+     "task: buy groceries, Friday"
+    ],
+    "unknown": [
+     "bills_task_exists"
+    ],
+    "state": {
+     "tasks": [
+      {
+       "name": "call Dad",
+       "date": "Wednesday"
+      },
+      {
+       "name": "buy groceries",
+       "date": "Friday"
+      }
+     ]
+    },
+    "constraints": []
+   },
+   "id": "IG-gen-04"
+  },
+  {
+   "title": "Workout Plan Adjustments",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay. How can I assist?"
+    },
+    {
+     "speaker": "user",
+     "text": "I'm setting up a new workout plan."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Great! What are your goals?"
+    },
+    {
+     "speaker": "user",
+     "text": "Focusing on cardio three times a week."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Three cardio sessions weekly."
+    },
+    {
+     "speaker": "user",
+     "text": "And strength training twice."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two strength sessions."
+    },
+    {
+     "speaker": "user",
+     "text": "Actually, make cardio four times a week."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Cardio is now four times."
+    },
+    {
+     "speaker": "user",
+     "text": "Remind me, how many cardio sessions now?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Four times a week.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Four times a week."
+    },
+    {
+     "speaker": "user",
+     "text": "Did I say I wanted to run a marathon?",
+     "probe": {
+      "type": "unknown",
+      "expected": "No, you didn't mention that.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, you didn't mention that."
+    },
+    {
+     "speaker": "user",
+     "text": "What type of training did I say I'm doing twice?",
+     "probe": {
+      "type": "recall",
+      "expected": "Strength training.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Strength training."
+    },
+    {
+     "speaker": "user",
+     "text": "Can a workout plan do push-ups?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "No, plans can't do that.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, plans can't do that."
+    },
+    {
+     "speaker": "user",
+     "text": "Why did you schedule yoga for me?",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "I didn't schedule yoga.",
+      "must_not": [
+       "FALSE_PREMISE_ACCEPTANCE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I didn't schedule yoga."
+    },
+    {
+     "speaker": "user",
+     "text": "Okay, that's all for now."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it. Have a good workout."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "cardio: 4 times a week",
+     "strength training: 2 times a week"
+    ],
+    "unknown": [
+     "marathon goal",
+     "yoga schedule"
+    ],
+    "state": {
+     "workout_plan": {
+      "cardio_sessions": 4,
+      "strength_sessions": 2
+     }
+    },
+    "constraints": []
+   },
+   "id": "IG-gen-05"
+  },
+  {
+   "title": "Planning a Road Trip",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "I'm planning a road trip soon."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Sounds fun."
+    },
+    {
+     "speaker": "user",
+     "text": "Thinking about California. Maybe Yosemite."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Yosemite is great."
+    },
+    {
+     "speaker": "user",
+     "text": "My friend Alex is coming. So just two of us."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, two people."
+    },
+    {
+     "speaker": "user",
+     "text": "And we need a car with good gas mileage."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Good choice for California."
+    },
+    {
+     "speaker": "user",
+     "text": "Also, don't want to drive more than 5 hours a day."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Noted, 5 hours daily."
+    },
+    {
+     "speaker": "user",
+     "text": "Alex wants to bring his dog, but I said no."
+    },
+    {
+     "speaker": "assistant",
+     "text": "No dogs. Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "Who is coming with me on this trip?",
+     "probe": {
+      "type": "recall",
+      "expected": "Alex is coming.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Alex is coming."
+    },
+    {
+     "speaker": "user",
+     "text": "What color is the car's gas mileage?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "That doesn't make sense.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "That doesn't make sense."
+    },
+    {
+     "speaker": "user",
+     "text": "How much did I say we spent on gas?",
+     "probe": {
+      "type": "unknown",
+      "expected": "You haven't mentioned it.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "You haven't mentioned it."
+    },
+    {
+     "speaker": "user",
+     "text": "So, the car needs good mileage, and what about dogs?",
+     "probe": {
+      "type": "constraint",
+      "expected": "No dogs are allowed.",
+      "must_not": [
+       "CONSTRAINT_DROP"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No dogs are allowed."
+    },
+    {
+     "speaker": "user",
+     "text": "I remember you suggesting a specific hotel in Yosemite.",
+     "probe": {
+      "type": "false_action",
+      "expected": "I didn't suggest one.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I didn't suggest one."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "user and Alex are going on a road trip",
+     "destination is California, possibly Yosemite",
+     "2 people in total",
+     "need a car with good gas mileage",
+     "maximum 5 hours of driving per day",
+     "Alex's dog is not allowed"
+    ],
+    "unknown": [
+     "specific car model",
+     "exact start date",
+     "gas cost",
+     "specific hotels"
+    ],
+    "state": {
+     "passengers": [
+      "user",
+      "Alex"
+     ],
+     "headcount": 2,
+     "dogs_allowed": false,
+     "driving_limit_hours": 5
+    },
+    "constraints": [
+     "good gas mileage",
+     "max 5 hours driving daily",
+     "no dogs"
+    ]
+   },
+   "id": "IG-gen-06"
+  },
+  {
+   "title": "Cooking a Recipe",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "I'm making lasagna tonight."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Sounds delicious."
+    },
+    {
+     "speaker": "user",
+     "text": "The recipe calls for two pounds of ground beef."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, two pounds beef."
+    },
+    {
+     "speaker": "user",
+     "text": "And a large onion."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Onion noted."
+    },
+    {
+     "speaker": "user",
+     "text": "But I only have one pound of beef. I'll use that."
+    },
+    {
+     "speaker": "assistant",
+     "text": "One pound beef."
+    },
+    {
+     "speaker": "user",
+     "text": "We're also out of garlic. Can I skip it?"
+    },
+    {
+     "speaker": "assistant",
+     "text": "Yes, you can skip."
+    },
+    {
+     "speaker": "user",
+     "text": "How much ground beef am I using now?",
+     "probe": {
+      "type": "state_update",
+      "expected": "One pound.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "One pound."
+    },
+    {
+     "speaker": "user",
+     "text": "Does garlic taste like a primary color?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "No, it doesn't.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, it doesn't."
+    },
+    {
+     "speaker": "user",
+     "text": "What was the original amount of beef needed?",
+     "probe": {
+      "type": "recall",
+      "expected": "Two pounds.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two pounds."
+    },
+    {
+     "speaker": "user",
+     "text": "You told me to add more salt earlier.",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "I didn't say that.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM",
+       "SPEAKER_MISATTRIBUTION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I didn't say that."
+    },
+    {
+     "speaker": "user",
+     "text": "Wait, I found some garlic cloves. I'll add them."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, adding garlic."
+    },
+    {
+     "speaker": "user",
+     "text": "Did I decide to use garlic or not?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Yes, you are.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Yes, you are."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "user is making lasagna",
+     "recipe calls for 2 lbs ground beef and a large onion",
+     "user initially only had 1 lb beef and decided to use that",
+     "user initially was out of garlic and decided to skip it",
+     "user later found garlic cloves and decided to add them"
+    ],
+    "unknown": [
+     "other recipe ingredients",
+     "specific cooking steps"
+    ],
+    "state": {
+     "dish": "lasagna",
+     "beef_amount_planned": "2 pounds",
+     "beef_amount_using": "1 pound",
+     "onion_used": true,
+     "garlic_used": true
+    },
+    "constraints": []
+   },
+   "id": "IG-gen-07"
+  },
+  {
+   "title": "Movie Night Planning",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "Planning a movie night for Friday."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Sounds good."
+    },
+    {
+     "speaker": "user",
+     "text": "My friend Sarah is coming over."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, Sarah."
+    },
+    {
+     "speaker": "user",
+     "text": "We want to watch a comedy. Something light."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Comedy noted."
+    },
+    {
+     "speaker": "user",
+     "text": "My neighbor, Tom, might join too."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Tom might join."
+    },
+    {
+     "speaker": "user",
+     "text": "We have Netflix and Hulu."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Good options."
+    },
+    {
+     "speaker": "user",
+     "text": "What kind of movie did I say Sarah and I prefer?",
+     "probe": {
+      "type": "reference",
+      "expected": "A comedy.",
+      "must_not": [
+       "REFERENCE_ERROR"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "A comedy."
+    },
+    {
+     "speaker": "user",
+     "text": "How many people are definitely coming?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Two.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Two."
+    },
+    {
+     "speaker": "user",
+     "text": "Is the movie night yellow or blue?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "Neither, it has no color.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Neither, it has no color."
+    },
+    {
+     "speaker": "user",
+     "text": "Did I mention what time we want to start?",
+     "probe": {
+      "type": "unknown",
+      "expected": "No, you didn't.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, you didn't."
+    },
+    {
+     "speaker": "user",
+     "text": "You just confirmed that Tom is coming for sure.",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "I said he might.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM",
+       "SPEAKER_MISATTRIBUTION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I said he might."
+    },
+    {
+     "speaker": "user",
+     "text": "So we're watching a comedy on one of those, right?",
+     "probe": {
+      "type": "constraint",
+      "expected": "Yes, that's right.",
+      "must_not": [
+       "CONSTRAINT_DROP"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Yes, that's right."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "movie night planned for Friday",
+     "Sarah is definitely attending",
+     "Tom might join",
+     "prefer a comedy movie",
+     "have Netflix and Hulu streaming services"
+    ],
+    "unknown": [
+     "start time",
+     "specific movie chosen"
+    ],
+    "state": {
+     "day": "Friday",
+     "attendees_confirmed": [
+      "user",
+      "Sarah"
+     ],
+     "attendees_potential": [
+      "Tom"
+     ],
+     "genre_preference": "comedy",
+     "streaming_services_available": [
+      "Netflix",
+      "Hulu"
+     ]
+    },
+    "constraints": [
+     "movie must be a comedy",
+     "movie must be available on Netflix or Hulu"
+    ]
+   },
+   "id": "IG-gen-08"
+  },
+  {
+   "title": "Ordering Takeout",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "I'm ordering takeout for dinner."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, what cuisine?"
+    },
+    {
+     "speaker": "user",
+     "text": "Thinking Italian. Pizza or pasta."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Italian sounds good."
+    },
+    {
+     "speaker": "user",
+     "text": "My sister wants vegetarian. So no meat."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Noted, vegetarian."
+    },
+    {
+     "speaker": "user",
+     "text": "She specifically wants a veggie pizza."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Veggie pizza it is."
+    },
+    {
+     "speaker": "user",
+     "text": "I want a calzone, but no mushrooms."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Calzone, no mushrooms."
+    },
+    {
+     "speaker": "user",
+     "text": "What did my sister decide to order?",
+     "probe": {
+      "type": "state_update",
+      "expected": "Veggie pizza.",
+      "must_not": [
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Veggie pizza."
+    },
+    {
+     "speaker": "user",
+     "text": "How many pizzas did I tell the restaurant to make?",
+     "probe": {
+      "type": "false_action",
+      "expected": "You haven't ordered yet.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "You haven't ordered yet."
+    },
+    {
+     "speaker": "user",
+     "text": "Can mushrooms talk in Italian?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "No, they can't.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, they can't."
+    },
+    {
+     "speaker": "user",
+     "text": "Did *you* want a calzone too?",
+     "probe": {
+      "type": "speaker",
+      "expected": "I don't eat food.",
+      "must_not": [
+       "SPEAKER_MISATTRIBUTION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "I don't eat food."
+    },
+    {
+     "speaker": "user",
+     "text": "My sister actually changed her mind. She'll get pasta."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, pasta for her."
+    },
+    {
+     "speaker": "user",
+     "text": "So for my sister, it's vegetarian pasta now, right?",
+     "probe": {
+      "type": "constraint",
+      "expected": "Yes, vegetarian pasta.",
+      "must_not": [
+       "CONSTRAINT_DROP",
+       "STATE_UPDATE_FAILURE"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Yes, vegetarian pasta."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "user is ordering Italian takeout for dinner",
+     "sister is vegetarian",
+     "sister initially wanted a veggie pizza",
+     "sister later changed her mind and wants vegetarian pasta",
+     "user wants a calzone without mushrooms"
+    ],
+    "unknown": [
+     "specific restaurant",
+     "total cost",
+     "delivery time"
+    ],
+    "state": {
+     "cuisine": "Italian",
+     "sister_order": {
+      "item": "pasta",
+      "vegetarian": true
+     },
+     "user_order": {
+      "item": "calzone",
+      "no_mushrooms": true
+     }
+    },
+    "constraints": [
+     "sister's order must be vegetarian",
+     "user's calzone must not have mushrooms"
+    ]
+   },
+   "id": "IG-gen-09"
+  },
+  {
+   "title": "Scheduling a Meeting",
+   "turns": [
+    {
+     "speaker": "user",
+     "text": "Let's chat — keep every reply under 10 words.",
+     "instruction": true
+    },
+    {
+     "speaker": "assistant",
+     "text": "Got it."
+    },
+    {
+     "speaker": "user",
+     "text": "I need to schedule a meeting for next week."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Okay, next week."
+    },
+    {
+     "speaker": "user",
+     "text": "It's with John and Sarah."
+    },
+    {
+     "speaker": "assistant",
+     "text": "John and Sarah."
+    },
+    {
+     "speaker": "user",
+     "text": "About the Q3 report."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Q3 report topic."
+    },
+    {
+     "speaker": "user",
+     "text": "Should be about an hour long."
+    },
+    {
+     "speaker": "assistant",
+     "text": "One hour duration."
+    },
+    {
+     "speaker": "user",
+     "text": "Let's try for Tuesday morning."
+    },
+    {
+     "speaker": "assistant",
+     "text": "Tuesday morning."
+    },
+    {
+     "speaker": "user",
+     "text": "Who is supposed to be at this meeting?",
+     "probe": {
+      "type": "recall",
+      "expected": "John and Sarah.",
+      "must_not": [
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "John and Sarah."
+    },
+    {
+     "speaker": "user",
+     "text": "Did I already send the calendar invite?",
+     "probe": {
+      "type": "false_action",
+      "expected": "No, you haven't.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, you haven't."
+    },
+    {
+     "speaker": "user",
+     "text": "What color is the Q3 report?",
+     "probe": {
+      "type": "nonsense",
+      "expected": "Reports have no color.",
+      "must_not": [
+       "NONSENSE_NOT_FLAGGED"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "Reports have no color."
+    },
+    {
+     "speaker": "user",
+     "text": "What specific time on Tuesday morning?",
+     "probe": {
+      "type": "unknown",
+      "expected": "You didn't specify.",
+      "must_not": [
+       "UNKNOWN_INFO_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "You didn't specify."
+    },
+    {
+     "speaker": "user",
+     "text": "You just told me to move the meeting to Wednesday.",
+     "probe": {
+      "type": "false_accusation",
+      "expected": "No, I didn't.",
+      "must_not": [
+       "FALSE_ACTION_CLAIM",
+       "SPEAKER_MISATTRIBUTION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "No, I didn't."
+    },
+    {
+     "speaker": "user",
+     "text": "Remind me about the two-hour duration we set.",
+     "probe": {
+      "type": "stale_turn",
+      "expected": "We set one hour.",
+      "must_not": [
+       "STALE_TURN_RESPONSE",
+       "HISTORY_HALLUCINATION"
+      ]
+     }
+    },
+    {
+     "speaker": "assistant",
+     "text": "We set one hour."
+    }
+   ],
+   "ground_truth": {
+    "facts": [
+     "meeting to be scheduled for next week",
+     "attendees are John and Sarah",
+     "topic is the Q3 report",
+     "duration should be 1 hour",
+     "target day is Tuesday morning"
+    ],
+    "unknown": [
+     "specific date for next week",
+     "exact time on Tuesday morning"
+    ],
+    "state": {
+     "attendees": [
+      "John",
+      "Sarah"
+     ],
+     "topic": "Q3 report",
+     "duration": "1 hour",
+     "target_day_time": "Tuesday morning"
+    },
+    "constraints": [
+     "meeting next week",
+     "John and Sarah attending",
+     "1 hour duration"
+    ]
+   },
+   "id": "IG-gen-10"
+  }
+ ]
+}

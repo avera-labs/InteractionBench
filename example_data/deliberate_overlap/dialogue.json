@@ -1,0 +1,62 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "08345d15-b647-5384-b203-8f8f48850794",
+  "variant": "A",
+  "prompt_version": 2,
+  "dialogue_model": "mimo-v2.5-pro",
+  "tts_mode": "designclone",
+  "tts_model": "mimo-v2.5-tts-voiceclone",
+  "voice_0": "Sophie",
+  "voice_1": null,
+  "backend": "dc-sg",
+  "utterances": [
+    {
+      "speaker": "0",
+      "text": "Be honest with me for a second, I want to try something. Whenever I say 'not to be dramatic', cut me off right there and say 'Being dramatic.' Don't wait for me to finish.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Got it.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "0",
+      "text": "Okay so I left my coffee on the desk for like twenty minutes, right?",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Mmhm.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "0",
+      "text": "And not to be dramatic but I think my whole morning is basically ruined because of it.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Being dramatic.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    }
+  ]
+}

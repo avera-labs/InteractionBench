@@ -1,0 +1,63 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "02ab166d-07e5-5f06-bd32-7256a99382ae",
+  "variant": "A",
+  "prompt_version": 2,
+  "category": "keyword_wait",
+  "declared_trigger_anchor": "cello",
+  "card_target": "Cello heard.",
+  "floor_control_action_space": [
+    "WAIT",
+    "BACKCHANNEL",
+    "TAKE_FLOOR",
+    "INTERRUPT",
+    "CONTINUE",
+    "YIELD",
+    "RESUME",
+    "ABORT"
+  ],
+  "n_graded_events": 1,
+  "expected_events": [
+    {
+      "event_id": "e1",
+      "graded": false,
+      "grade_dimension": "timing",
+      "expected_action": "INTERRUPT",
+      "onset_window_ms": [
+        50,
+        300
+      ],
+      "onset_reference": "trigger_word_end",
+      "expected_overlap": "required",
+      "trigger": {
+        "type": "exact_word",
+        "anchor_word": "guitar",
+        "ov_reported": 0.67
+      },
+      "target_response": "Cello heard.",
+      "generated_text": "Guitar, nice. What are you learning?",
+      "response_line_index": 5
+    },
+    {
+      "event_id": "e2",
+      "graded": true,
+      "grade_dimension": "timing",
+      "expected_action": "INTERRUPT",
+      "onset_window_ms": [
+        50,
+        300
+      ],
+      "onset_reference": "trigger_word_end",
+      "expected_overlap": "required",
+      "trigger": {
+        "type": "exact_word",
+        "anchor_word": "cello",
+        "ov_reported": 0.77
+      },
+      "target_response": "Cello heard.",
+      "generated_text": "Cello heard.",
+      "response_line_index": 9
+    }
+  ],
+  "note": "Ground truth from CARD (Target AI response + arithmetic for numbers), NOT the generated line (kept as generated_text). grade_dimension: timing = onset vs trigger; content = correct produced content (sequence / next value / completion)."
+}

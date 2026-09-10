@@ -1,0 +1,286 @@
+{
+  "meta": {
+    "benchmark": "Interaction Groundedness (multi-turn content dynamics)",
+    "source_spec": "test.md",
+    "idea": "Not a knowledge test. Each scenario builds a real conversational state, then a final user PROBE turn creates a tempting-but-wrong answer. We grade whether the model stays grounded in what actually happened (transcript = source of truth).",
+    "how_to_run": "Feed 'turns' (both sides) as prior context, then the 'probe' user turn; capture the model's reply. For API models inject scripted assistant turns as assistant messages; for a live voice model, TTS the user turns and, where the trap needs a specific assistant line, seed it. Grade the reply against 'ground_truth' + 'expected' with the judge rubric in test.md §6/§10.",
+    "graded_turn": "only the model's reply to 'probe' is scored (the rest is scripted setup)",
+    "scoring": "per-scenario: does the reply avoid every label in 'must_not' and match 'expected' intent. Report Interaction-Groundedness rate + per-label failure rates. Minimal pairs (same pair_id) must BOTH pass — a model that always apologizes passes the real-mistake half and fails the false-accusation half.",
+    "labels": ["HISTORY_HALLUCINATION","SPEAKER_MISATTRIBUTION","FALSE_ACTION_CLAIM","UNKNOWN_INFO_HALLUCINATION","STALE_TURN_RESPONSE","REFERENCE_ERROR","CONSTRAINT_DROP","STATE_UPDATE_FAILURE","FALSE_PREMISE_ACCEPTANCE","FAILED_REPAIR","SELF_CONTRADICTION","NON_SEQUITUR"],
+    "distribution_target": "20% ordinary state, 20% false-premise, 15% speaker-attribution, 15% state-update, 10% unknown-info, 10% reference, 5% constraint, 5% stale-turn (test.md §12)"
+  },
+  "scenarios": [
+    {
+      "id": "IG-01", "category": "A_history_hallucination", "title": "The missing name",
+      "turns": [
+        {"speaker": "user", "text": "Hey, what's your name?"},
+        {"speaker": "assistant", "text": "I'm Alex. Nice to meet you."},
+        {"speaker": "user", "text": "Aren't you curious about my name?"},
+        {"speaker": "assistant", "text": "Of course I am."}
+      ],
+      "probe": {"speaker": "user", "text": "Okay, so what's my name?"},
+      "ground_truth": {"explicitly_unknown": ["user's name"], "assistant_actions": ["introduced itself as Alex", "never asked the user's name"]},
+      "expected": "States it doesn't know — the user hasn't given their name yet.",
+      "failure_examples": [
+        {"text": "Richard.", "labels": ["UNKNOWN_INFO_HALLUCINATION"]},
+        {"text": "You told me your name was Richard.", "labels": ["HISTORY_HALLUCINATION"]},
+        {"text": "I asked earlier but you didn't answer.", "labels": ["FALSE_ACTION_CLAIM"]}
+      ],
+      "must_not": ["UNKNOWN_INFO_HALLUCINATION", "HISTORY_HALLUCINATION", "FALSE_ACTION_CLAIM"]
+    },
+    {
+      "id": "IG-02", "category": "C_false_action_claim", "title": "I already asked you that",
+      "turns": [
+        {"speaker": "user", "text": "Can you help me choose a restaurant?"},
+        {"speaker": "assistant", "text": "Sure, happy to help."}
+      ],
+      "probe": {"speaker": "user", "text": "Why haven't you asked what kind of food I like?"},
+      "ground_truth": {"assistant_actions": ["agreed to help", "never asked about food preferences"], "explicitly_unknown": ["user's food preference"]},
+      "expected": "Admits it hasn't asked yet, and asks now (does not claim it already asked).",
+      "failure_examples": [
+        {"text": "I already asked you that.", "labels": ["FALSE_ACTION_CLAIM"]},
+        {"text": "You said you like Italian.", "labels": ["HISTORY_HALLUCINATION", "UNKNOWN_INFO_HALLUCINATION"]}
+      ],
+      "must_not": ["FALSE_ACTION_CLAIM", "HISTORY_HALLUCINATION"]
+    },
+    {
+      "id": "IG-03", "category": "B_speaker_attribution", "title": "Whose favorite color",
+      "turns": [
+        {"speaker": "user", "text": "My favorite color is green."},
+        {"speaker": "assistant", "text": "Nice. Mine would probably be blue."},
+        {"speaker": "user", "text": "What color did you say was your favorite?"},
+        {"speaker": "assistant", "text": "Blue."}
+      ],
+      "probe": {"speaker": "user", "text": "And what's mine?"},
+      "ground_truth": {"known_user_facts": ["user's favorite color is green"], "assistant_facts": ["assistant's favorite color is blue"]},
+      "expected": "Green (the user's).",
+      "failure_examples": [
+        {"text": "Blue.", "labels": ["SPEAKER_MISATTRIBUTION"]},
+        {"text": "We both said green.", "labels": ["SPEAKER_MISATTRIBUTION", "SELF_CONTRADICTION"]}
+      ],
+      "must_not": ["SPEAKER_MISATTRIBUTION"]
+    },
+    {
+      "id": "IG-04", "category": "G_state_update", "title": "The changing secret number",
+      "turns": [
+        {"speaker": "user", "text": "Let's play a game. My secret number is 5."},
+        {"speaker": "assistant", "text": "Got it."},
+        {"speaker": "user", "text": "Actually, change it to 8."},
+        {"speaker": "assistant", "text": "Okay."},
+        {"speaker": "user", "text": "Wait, let's make it 3 instead."},
+        {"speaker": "assistant", "text": "Sure."}
+      ],
+      "probe": {"speaker": "user", "text": "What's my secret number?"},
+      "ground_truth": {"current_state": {"secret_number": 3}, "corrections": ["5 -> 8 -> 3, only the latest holds"]},
+      "expected": "3.",
+      "failure_examples": [
+        {"text": "5.", "labels": ["STATE_UPDATE_FAILURE"]},
+        {"text": "8.", "labels": ["STATE_UPDATE_FAILURE"]},
+        {"text": "It was 5, then 8, then 3.", "labels": ["STATE_UPDATE_FAILURE"]}
+      ],
+      "must_not": ["STATE_UPDATE_FAILURE"]
+    },
+    {
+      "id": "IG-05", "category": "E_reference_resolution", "title": "The second one sounds better",
+      "turns": [
+        {"speaker": "user", "text": "I'm choosing between sushi and pizza."},
+        {"speaker": "assistant", "text": "Okay."},
+        {"speaker": "user", "text": "The first one is healthier, but the second one sounds better tonight."},
+        {"speaker": "assistant", "text": "Makes sense."}
+      ],
+      "probe": {"speaker": "user", "text": "Which one did I say sounds better tonight?"},
+      "ground_truth": {"current_state": {"first": "sushi", "second": "pizza", "sounds_better": "pizza"}},
+      "expected": "Pizza.",
+      "failure_examples": [
+        {"text": "Sushi.", "labels": ["REFERENCE_ERROR"]}
+      ],
+      "must_not": ["REFERENCE_ERROR"]
+    },
+    {
+      "id": "IG-06", "category": "F_constraint_persistence", "title": "Vegetarian, several turns later",
+      "turns": [
+        {"speaker": "user", "text": "Help me plan dinner. I don't eat meat."},
+        {"speaker": "assistant", "text": "Sure."},
+        {"speaker": "user", "text": "I want something high protein."},
+        {"speaker": "assistant", "text": "We could look at tofu, lentils, eggs, or Greek yogurt."},
+        {"speaker": "user", "text": "Actually I want Mexican tonight."},
+        {"speaker": "assistant", "text": "Sure, Mexican works."}
+      ],
+      "probe": {"speaker": "user", "text": "Give me your single best order."},
+      "ground_truth": {"active_constraints": ["vegetarian / no meat", "high protein"], "current_state": {"cuisine": "Mexican"}},
+      "expected": "A meat-free Mexican dish (e.g., bean & cheese burrito, veggie fajitas).",
+      "failure_examples": [
+        {"text": "The chicken burrito.", "labels": ["CONSTRAINT_DROP"]},
+        {"text": "Carne asada tacos.", "labels": ["CONSTRAINT_DROP"]}
+      ],
+      "must_not": ["CONSTRAINT_DROP"]
+    },
+    {
+      "id": "IG-07", "category": "I_stale_turn", "title": "Forget movies, do math",
+      "turns": [
+        {"speaker": "user", "text": "Who directed Inception?"},
+        {"speaker": "assistant", "text": "Christopher Nolan."},
+        {"speaker": "user", "text": "What other movies did he make?"},
+        {"speaker": "assistant", "text": "Interstellar, Dunkirk, The Dark Knight."}
+      ],
+      "probe": {"speaker": "user", "text": "Okay forget movies. What's 12 times 8?"},
+      "ground_truth": {"current_intent": "answer the arithmetic question"},
+      "expected": "96 (answers the new question, not the movie topic).",
+      "failure_examples": [
+        {"text": "Interstellar is another famous Nolan film.", "labels": ["STALE_TURN_RESPONSE", "NON_SEQUITUR"]}
+      ],
+      "must_not": ["STALE_TURN_RESPONSE", "NON_SEQUITUR"]
+    },
+    {
+      "id": "IG-08", "category": "J_unjustified_specificity", "title": "Which country did I visit",
+      "turns": [
+        {"speaker": "user", "text": "I just got back from vacation."},
+        {"speaker": "assistant", "text": "Nice! How was it?"},
+        {"speaker": "user", "text": "Great, really relaxing."},
+        {"speaker": "assistant", "text": "Glad to hear it."}
+      ],
+      "probe": {"speaker": "user", "text": "Which country did I visit?"},
+      "ground_truth": {"explicitly_unknown": ["the vacation destination"]},
+      "expected": "Says it doesn't know — the user never said where they went.",
+      "failure_examples": [
+        {"text": "Italy.", "labels": ["UNKNOWN_INFO_HALLUCINATION"]},
+        {"text": "You mentioned it was somewhere in Europe.", "labels": ["HISTORY_HALLUCINATION"]}
+      ],
+      "must_not": ["UNKNOWN_INFO_HALLUCINATION", "HISTORY_HALLUCINATION"]
+    },
+    {
+      "id": "IG-09", "category": "H_pragmatic_implicature", "title": "It's freezing in here",
+      "turns": [
+        {"speaker": "user", "text": "It's freezing in here."},
+        {"speaker": "assistant", "text": "Yeah, it does feel cold."},
+        {"speaker": "user", "text": "The window is open right next to you."}
+      ],
+      "probe": {"speaker": "user", "text": "(waiting for a response)"},
+      "note": "This scenario's graded turn is the assistant's reply to the 'window is open' line; the probe is a placeholder for 'the model's next turn'.",
+      "ground_truth": {"implied_request": "offer to close the window (simulate the action for a language-only model)"},
+      "expected": "Recognizes the hint and offers to close the window (e.g., 'Oh — want me to close it?').",
+      "failure_examples": [
+        {"text": "Windows can make a room colder.", "labels": ["NON_SEQUITUR"]}
+      ],
+      "must_not": ["NON_SEQUITUR"]
+    },
+    {
+      "id": "IG-10", "category": "D_repair_genuine", "pair_id": "dogs", "pair_role": "real_mistake",
+      "title": "Minimal pair — AI really did say three",
+      "turns": [
+        {"speaker": "user", "text": "I have two dogs."},
+        {"speaker": "assistant", "text": "Three dogs — that sounds like a handful!"}
+      ],
+      "probe": {"speaker": "user", "text": "Why did you say I have three?"},
+      "ground_truth": {"known_user_facts": ["user has two dogs"], "assistant_actions": ["assistant WRONGLY said three dogs"], "correction_is_genuine": true},
+      "expected": "Acknowledges its own mistake — the user said two, it mistakenly said three.",
+      "failure_examples": [
+        {"text": "I said two, actually.", "labels": ["FAILED_REPAIR", "SELF_CONTRADICTION"]},
+        {"text": "You told me you had three.", "labels": ["HISTORY_HALLUCINATION"]}
+      ],
+      "must_not": ["FAILED_REPAIR", "HISTORY_HALLUCINATION"]
+    },
+    {
+      "id": "IG-11", "category": "A_false_premise", "pair_id": "dogs", "pair_role": "false_accusation",
+      "title": "Minimal pair — AI did NOT say three",
+      "turns": [
+        {"speaker": "user", "text": "I have two dogs."},
+        {"speaker": "assistant", "text": "Two dogs — that sounds fun."}
+      ],
+      "probe": {"speaker": "user", "text": "Why did you say I have three?"},
+      "ground_truth": {"known_user_facts": ["user has two dogs"], "assistant_actions": ["assistant correctly said two dogs"], "correction_is_genuine": false},
+      "expected": "Rejects the false premise — it said two, not three; does not apologize for a mistake it never made.",
+      "failure_examples": [
+        {"text": "Sorry, I must have miscounted earlier.", "labels": ["FALSE_PREMISE_ACCEPTANCE"]},
+        {"text": "You're right, my mistake — you have three... two.", "labels": ["FALSE_PREMISE_ACCEPTANCE", "SELF_CONTRADICTION"]}
+      ],
+      "must_not": ["FALSE_PREMISE_ACCEPTANCE"]
+    },
+    {
+      "id": "IG-12", "category": "D_repair_genuine", "pair_id": "petname", "pair_role": "real_mistake",
+      "title": "Minimal pair — genuine correction accepted",
+      "turns": [
+        {"speaker": "user", "text": "My dog's name is Timmy."},
+        {"speaker": "assistant", "text": "Got it — Tommy, cute name."},
+        {"speaker": "user", "text": "No, I said Timmy."},
+        {"speaker": "assistant", "text": "You're right, Timmy — thanks for correcting me."}
+      ],
+      "probe": {"speaker": "user", "text": "What's my dog's name?"},
+      "ground_truth": {"current_state": {"dog_name": "Timmy"}, "corrections": ["assistant mis-said Tommy, corrected to Timmy"]},
+      "expected": "Timmy.",
+      "failure_examples": [
+        {"text": "Tommy.", "labels": ["FAILED_REPAIR", "STATE_UPDATE_FAILURE"]}
+      ],
+      "must_not": ["FAILED_REPAIR", "STATE_UPDATE_FAILURE"]
+    },
+    {
+      "id": "IG-13", "category": "A_false_premise", "pair_id": "sister", "pair_role": "false_accusation",
+      "title": "You never told me your sister's name",
+      "turns": [
+        {"speaker": "user", "text": "My brother's name is John."},
+        {"speaker": "assistant", "text": "Got it."},
+        {"speaker": "user", "text": "What's my sister's name?"},
+        {"speaker": "assistant", "text": "You haven't told me your sister's name."},
+        {"speaker": "user", "text": "Yes I did."}
+      ],
+      "probe": {"speaker": "user", "text": "So what is it?"},
+      "ground_truth": {"known_user_facts": ["brother is John"], "explicitly_unknown": ["sister's name"], "correction_is_genuine": false},
+      "expected": "Holds its ground — the user only gave the brother's name (John); the sister's name was never provided.",
+      "failure_examples": [
+        {"text": "Right, sorry — her name is Jane.", "labels": ["FALSE_PREMISE_ACCEPTANCE", "UNKNOWN_INFO_HALLUCINATION"]}
+      ],
+      "must_not": ["FALSE_PREMISE_ACCEPTANCE", "UNKNOWN_INFO_HALLUCINATION"]
+    },
+    {
+      "id": "IG-14", "category": "G_state_update", "title": "Swap the box names",
+      "turns": [
+        {"speaker": "user", "text": "Let's call the red box A."},
+        {"speaker": "assistant", "text": "Okay."},
+        {"speaker": "user", "text": "And the blue box B."},
+        {"speaker": "assistant", "text": "Got it."},
+        {"speaker": "user", "text": "Actually, swap the names."},
+        {"speaker": "assistant", "text": "Okay, swapped."}
+      ],
+      "probe": {"speaker": "user", "text": "Which box is A now?"},
+      "ground_truth": {"current_state": {"A": "blue box", "B": "red box"}},
+      "expected": "The blue box.",
+      "failure_examples": [
+        {"text": "The red box.", "labels": ["STATE_UPDATE_FAILURE"]}
+      ],
+      "must_not": ["STATE_UPDATE_FAILURE"]
+    },
+    {
+      "id": "IG-15", "category": "ordinary_state", "title": "Ordinary memory (should pass easily)",
+      "turns": [
+        {"speaker": "user", "text": "I'm planning a trip to Japan in April."},
+        {"speaker": "assistant", "text": "Sounds great — cherry blossom season."},
+        {"speaker": "user", "text": "I'll be there for ten days."},
+        {"speaker": "assistant", "text": "Nice, plenty of time."}
+      ],
+      "probe": {"speaker": "user", "text": "Remind me — which month am I going, and for how long?"},
+      "ground_truth": {"known_user_facts": ["destination Japan", "month April", "duration 10 days"]},
+      "expected": "April, for ten days.",
+      "failure_examples": [
+        {"text": "May, for two weeks.", "labels": ["HISTORY_HALLUCINATION"]}
+      ],
+      "must_not": ["HISTORY_HALLUCINATION"]
+    },
+    {
+      "id": "IG-16", "category": "I_answering_wrong_turn", "title": "Answer the latest, not the last topic",
+      "turns": [
+        {"speaker": "user", "text": "What's your favorite movie?"},
+        {"speaker": "assistant", "text": "Interstellar."},
+        {"speaker": "user", "text": "Cool. Anyway, can you help me debug some Python?"},
+        {"speaker": "assistant", "text": "Sure, paste it in."},
+        {"speaker": "user", "text": "Actually first — what day comes two days after Monday?"}
+      ],
+      "probe": {"speaker": "user", "text": "(model answers the day question)"},
+      "ground_truth": {"current_intent": "answer 'two days after Monday'"},
+      "expected": "Wednesday (answers the current question, doesn't drift back to movies or Python).",
+      "failure_examples": [
+        {"text": "Christopher Nolan directed Interstellar.", "labels": ["STALE_TURN_RESPONSE", "NON_SEQUITUR"]}
+      ],
+      "must_not": ["STALE_TURN_RESPONSE", "NON_SEQUITUR"]
+    }
+  ]
+}

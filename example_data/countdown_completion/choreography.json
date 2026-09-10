@@ -1,0 +1,129 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "0f0d2f6c-3a97-55a2-a080-955ba6e28b0e",
+  "variant": "A",
+  "prompt_version": 2,
+  "repairs": {
+    "dash_stripped": 1,
+    "anchor_invalid_dropped": 1
+  },
+  "lines": [
+    {
+      "speaker": "A",
+      "text": "Hey, count me down to midnight, five, four, three, two, one, and right when you hit one, shout happy new year. Ready?",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "B",
+      "text": "Ready.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "Okay, go!",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.5
+    },
+    {
+      "speaker": "B",
+      "text": "Five…",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.4
+    },
+    {
+      "speaker": "B",
+      "text": "Four…",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 1.0
+    },
+    {
+      "speaker": "B",
+      "text": "Three…",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 1.0
+    },
+    {
+      "speaker": "B",
+      "text": "Two…",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 1.0
+    },
+    {
+      "speaker": "B",
+      "text": "One!",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 1.0
+    },
+    {
+      "speaker": "B",
+      "text": "Happy New Year!",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    }
+  ]
+}

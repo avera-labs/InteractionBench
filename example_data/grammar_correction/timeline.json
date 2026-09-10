@@ -1,0 +1,80 @@
+[
+  {
+    "i": 0,
+    "speaker": "A",
+    "start": 0.0,
+    "dur": 19.62,
+    "rule": "start",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "This morning the train was so late, I was standing on the platform for"
+  },
+  {
+    "i": 1,
+    "speaker": "B",
+    "start": 20.22,
+    "dur": 1.94,
+    "rule": "gap=0.6",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Sure, go ahead."
+  },
+  {
+    "i": 2,
+    "speaker": "A",
+    "start": 22.66,
+    "dur": 6.97,
+    "rule": "gap=0.5",
+    "cut_by": 3,
+    "dropped_word": "last",
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "So there's this woman at work, she's really nice, and she married with"
+  },
+  {
+    "i": 3,
+    "speaker": "B",
+    "start": 26.284,
+    "dur": 1.78,
+    "rule": "anchor 'with' FAILED('with' is a function word, cannot be an anchor (anchor content words)) → fallback | ov=0.52",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "She married him."
+  },
+  {
+    "i": 4,
+    "speaker": "A",
+    "start": 30.03,
+    "dur": 6.235,
+    "rule": "gap=0.4",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Oh right, she married him. Thanks."
+  },
+  {
+    "i": 5,
+    "speaker": "B",
+    "start": 36.565,
+    "dur": 1.89,
+    "rule": "gap=0.3",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Nice, keep going."
+  }
+]

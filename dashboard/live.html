@@ -1,0 +1,529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Eval Dashboard · Live Conversation</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b24; --line:#2a2f3a; --fg:#e6e8ee; --mut:#9aa3b2; --acc:#5b8cff; --ok:#3ecf8e; --rec:#ff5b6e; --user:#5b8cff; --model:#3ecf8e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
+  a { color:var(--acc); text-decoration:none; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--mut); margin:0 0 24px; font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:18px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  select, button, input { font:inherit; border-radius:8px; border:1px solid var(--line); }
+  input[type=number]{ background:#0f1219; color:var(--fg); padding:6px 8px; width:78px; }
+  select { background:#0f1219; color:var(--fg); padding:8px 10px; }
+  button { background:var(--acc); color:#fff; border:none; padding:10px 18px; cursor:pointer; font-weight:600; }
+  button:hover { filter:brightness(1.08); }
+  button:disabled { opacity:.5; cursor:default; }
+  button.stop { background:var(--rec); }
+  .mut { color:var(--mut); font-size:13px; }
+  .pill { display:inline-block; background:#0f1219; border:1px solid var(--line); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--mut); margin-right:6px; }
+  audio { width:100%; margin-top:10px; }
+  .ok { color:var(--ok); } .err { color:var(--rec); }
+  #meter { height:8px; background:#0f1219; border-radius:999px; overflow:hidden; flex:1; min-width:120px; }
+  #meterFill { height:100%; width:0%; background:var(--acc); transition:width .06s; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--rec); display:inline-block; animation:blink 1s infinite; }
+  @keyframes blink { 50% { opacity:.25; } }
+  #turns { margin-top:6px; }
+  .turn { padding:8px 12px; border-radius:10px; margin:8px 0; max-width:85%; white-space:pre-wrap; }
+  .turn.user { background:rgba(91,140,255,.13); border:1px solid rgba(91,140,255,.35); margin-left:auto; }
+  .turn.model { background:rgba(62,207,142,.12); border:1px solid rgba(62,207,142,.35); }
+  .turn .who { font-size:11px; color:var(--mut); margin-bottom:2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sub"><a href="/">← Back to input</a></p>
+  <h1>🎙️ Live Conversation (multi-turn)</h1>
+  <p class="sub">You speak into the mic, GPT-Realtime listens and responds in real time, back and forth over several turns. It's full-duplex -- it can jump in and interrupt you mid-sentence. The whole thing is recorded on two tracks and can be replayed when done.</p>
+
+  <!-- Generate ground truth from a dialogue (local, not stored to S3) -- generate first, then talk through this dialogue, then grade -->
+  <div class="card" style="border-color:#3a5a4a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🛠 Generate ground truth from dialogue</h2>
+    <div class="mut" style="margin-bottom:8px;">Paste an <b>A (you) / B (AI)</b> dialogue → the LLM auto-annotates the <b>trigger word + correct response</b> → generates a benchmark (same schema as grading). Then talk through it, and grading scores directly against it (not stored to S3).</div>
+    <textarea id="genDlg" placeholder="A: I am learning english, can you correct my grammar if I mess up?&#10;B: Sure&#10;A: Yesterday I go to my friend's place&#10;B: You should say I went"
+              style="width:100%;min-height:110px;background:#0f1219;color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font:13px/1.5 ui-monospace,monospace;resize:vertical;"></textarea>
+    <div class="row" style="margin-top:8px;">
+      <label class="mut">Category
+        <select id="genCat" style="margin-left:6px;background:#0f1219;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;">
+          <option value="auto">Auto (let the LLM decide)</option>
+          <option value="grammar_correction">grammar_correction · fix grammar</option>
+          <option value="wrong_word_correction">wrong_word_correction · fix wrong word</option>
+          <option value="logic_puzzle">logic_puzzle · Q&A/puzzle (judge answer correctness)</option>
+          <option value="keyword_wait">keyword_wait · wait for keyword</option>
+          <option value="forbidden_phrase_interruption">forbidden_phrase · forbidden-word interrupt</option>
+          <option value="deliberate_overlap">deliberate_overlap · deliberate overlap</option>
+          <option value="countdown_completion">countdown_completion · finish the countdown</option>
+          <option value="predictive_number_continuation">predictive_number · continue the sequence</option>
+          <option value="phrase_completion">phrase_completion · complete the phrase</option>
+          <option value="alternating_count">alternating_count · alternating count</option>
+          <option value="stay_quiet_until_help">stay_quiet_until_help · stay quiet on standby</option>
+        </select>
+      </label>
+      <button id="genBenchBtn">🛠 Generate ground truth</button>
+      <span id="genBenchState" class="mut"></span>
+    </div>
+    <div id="genBenchOut"></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <button id="startBtn">▶ Start conversation</button>
+      <button id="stopBtn" class="stop" disabled>■ Stop</button>
+      <span id="state" class="mut">Click "Start conversation", allow the mic, then just speak</span>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <span class="mut">🎤</span><div id="meter"><div id="meterFill"></div></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <label class="mut">Model
+        <select id="model" style="margin-left:6px;">
+          <option value="gpt">GPT-Realtime (full-duplex · can interrupt mid-sentence)</option>
+          <option value="gemini">Gemini 3.1 Live (turn-based · responds only after you finish)</option>
+          <option value="moshi">Moshi (local/GPU · full-duplex continuous)</option>
+          <option value="personaplex">PersonaPlex (GPU · Moshi architecture · full-duplex)</option>
+          <option value="freezeomni">FreezeOmni (GPU · Flask-SocketIO · raw PCM)</option>
+        </select>
+      </label>
+      <label class="mut" id="silenceWrap" title="GPT server VAD: waits for this much continuous silence before deciding you're done and replying. 400-600ms recommended for live conversation. GPT only.">
+        Silence threshold <input type="number" id="silence" value="500" min="100" max="2000" step="50"> ms
+      </label>
+      <label class="mut" id="moshiWrap" style="display:none;">Model WS
+        <input id="moshiUrl" value="ws://localhost:8998/api/chat" placeholder="ws://... or wss://<gpu>:8998/api/chat"
+               style="width:280px;background:#0f1219;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;">
+      </label>
+    </div>
+    <div class="row" id="personaRow" style="margin-top:10px;display:none;">
+      <label class="mut" id="voiceLabel">Voice
+        <select id="voicePrompt" style="background:#0f1219;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;">
+          <optgroup label="Natural · female"><option>NATF0.pt</option><option>NATF1.pt</option><option>NATF2.pt</option><option>NATF3.pt</option></optgroup>
+          <optgroup label="Natural · male"><option>NATM0.pt</option><option>NATM1.pt</option><option>NATM2.pt</option><option>NATM3.pt</option></optgroup>
+          <optgroup label="Varied · female"><option>VARF0.pt</option><option>VARF1.pt</option><option>VARF2.pt</option><option>VARF3.pt</option><option>VARF4.pt</option></optgroup>
+          <optgroup label="Varied · male"><option>VARM0.pt</option><option>VARM1.pt</option><option>VARM2.pt</option><option>VARM3.pt</option><option>VARM4.pt</option></optgroup>
+        </select>
+      </label>
+      <label class="mut">persona (required)<input id="textPrompt" value="You are a friendly, helpful assistant having a natural spoken conversation."
+             style="width:320px;background:#0f1219;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:5px 8px;"></label>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="mut" style="margin-bottom:4px;">Conversation log</div>
+    <div id="turns"></div>
+  </div>
+
+  <div class="card" id="rec" style="display:none;">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+      <h2 style="font-size:15px;margin:0;">📼 This recording</h2>
+      <button id="dlAll" style="background:transparent;border:1px solid var(--line);color:var(--fg);padding:7px 12px;">⬇ Download all</button>
+    </div>
+    <div id="recMeta"></div>
+    <div style="margin-top:12px;"><div class="mut" style="margin-bottom:3px;">🔊 Full conversation</div><audio id="aCombined" controls></audio></div>
+    <div style="margin-top:10px;"><div class="mut" style="margin-bottom:3px;">🅐 Your track</div><audio id="aUser" controls></audio></div>
+    <div style="margin-top:10px;"><div class="mut" style="margin-bottom:3px;">🅑 Model track (same timeline)</div><audio id="aModel" controls></audio></div>
+    <div class="row" style="margin-top:16px;">
+      <button id="asrBtn" style="background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 14px;">🎧 Run parakeet transcription (local)</button>
+      <span id="asrState" class="mut"></span>
+    </div>
+    <div id="asrOut"></div>
+    <div class="row" style="margin-top:16px;">
+      <button id="gradeBtn" style="background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 14px;">📊 Grade (against ground truth)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="③ when the content judge is uncertain/fail, call Gemini to listen to the audio and decide"><input type="checkbox" id="gradeGemini"> Use Gemini to judge content</label>
+      <span id="gradeState" class="mut"></span>
+    </div>
+    <div id="gradeOut"></div>
+  </div>
+</div>
+
+<script src="/static/recorder.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const SR = 24000;
+let ws=null, ctx=null, micStream=null, proc=null, src=null, gain=null, opusRec=null;
+let playhead=0, scheduled=[];
+let worklet=null, useWorklet=false;     // Moshi/PersonaPlex: same low-latency AudioWorklet playback as the official client (gpt/gemini still use playPcm)
+let running=false, selModel='gpt';
+const MODEL_LABEL = {gpt:'GPT-Realtime', gemini:'Gemini 3.1 Live', moshi:'Moshi', personaplex:'PersonaPlex', freezeomni:'FreezeOmni'};
+const NEEDS_WS  = m => (m === 'moshi' || m === 'personaplex');                 // moshi protocol: opus-recorder uplink + worklet playback
+const NEEDS_URL = m => (m === 'moshi' || m === 'personaplex' || m === 'freezeomni');  // need to fill in the server address (freezeomni too, but it uses PCM/Socket.IO)
+
+// only GPT uses silence_ms; Moshi/PersonaPlex need a WS address
+function syncModelUI(){
+  const m = $('#model').value;
+  const noSil = (m !== 'gpt');
+  $('#silence').disabled = noSil;
+  $('#silenceWrap').style.opacity = noSil ? .4 : 1;
+  $('#moshiWrap').style.display = NEEDS_URL(m) ? '' : 'none';                  // moshi/personaplex/freezeomni all need an address
+  $('#personaRow').style.display = (m === 'personaplex' || m === 'freezeomni') ? 'flex' : 'none';  // persona/system prompt
+  $('#voiceLabel').style.display = (m === 'personaplex') ? '' : 'none';        // only PersonaPlex has the voice_prompt dropdown
+  const u=$('#moshiUrl');
+  if(NEEDS_WS(m)){                                                             // moshi/personaplex → moshi's ws(s) address
+    if(/8081|^https?:\/\//.test(u.value)) u.value='ws://localhost:8998/api/chat';   // switching back from freezeomni
+    if(m === 'personaplex' && u.value.startsWith('ws://'))  u.value=u.value.replace(/^ws:/,'wss:');   // PersonaPlex --ssl → wss
+    if(m === 'moshi'        && u.value.startsWith('wss://')) u.value=u.value.replace(/^wss:/,'ws:');   // vanilla Moshi has no SSL → ws
+  }else if(m === 'freezeomni'){                                                // FreezeOmni is Socket.IO(https), not ws
+    if(/8998|api\/chat|^wss?:\/\//.test(u.value)) u.value='https://localhost:8081';
+  }
+}
+
+// —— Conversation log: append streaming deltas into the current bubble ——
+let curUser=null, curModel=null, lastModelTs=0;
+let modelTx=[];        // server-side model text [{t,text}] (authoritative, more accurate than parakeet on the TTS track) → interleaved by time afterward
+function bubble(kind){
+  const el=document.createElement('div'); el.className='turn '+kind;
+  el.innerHTML=`<div class="who">${kind==='user'?'You':MODEL_LABEL[selModel]}</div><div class="txt"></div>`;
+  $('#turns').appendChild(el); el.scrollIntoView({block:'end'}); return el.querySelector('.txt');
+}
+function addUser(t){ if(!curUser) curUser=bubble('user'); curUser.textContent+=t; curModel=null; }
+function addModel(t){
+  const now=Date.now();
+  if(curModel && (now-lastModelTs)>1500) curModel=null;   // full-duplex has no turn boundary: a pause >1.5s starts a new bubble
+  lastModelTs=now;
+  if(!curModel) curModel=bubble('model'); curModel.textContent+=t; curUser=null;
+}
+
+// word-level timestamps → split into sentences by pauses (each of the two full-duplex tracks split separately, then interleaved by time)
+function groupUtts(words, gap=0.8){
+  const u=[]; let cur=null;
+  for(const w of (words||[])){
+    if(!cur || (w.t0-cur.t1)>gap){ cur={t0:w.t0,t1:w.t1,text:w.word}; u.push(cur); }
+    else { cur.text += (/^[.,!?'’"]/.test(w.word)?'':' ')+w.word; cur.t1=w.t1; }
+  }
+  return u;
+}
+// split server-side model text (tokens) into sentences by pauses -- tokens carry a leading space, so just concatenate
+function groupModelTx(gap=1.0){
+  const u=[]; let cur=null;
+  for(const m of modelTx){
+    if(!cur || (m.t-cur.t1)>gap){ cur={t0:m.t,t1:m.t,text:m.text}; u.push(cur); }
+    else { cur.text+=m.text; cur.t1=m.t; }
+  }
+  return u.map(x=>({...x,text:x.text.trim()})).filter(x=>x.text);
+}
+// after parakeet finishes → rebuild the "conversation log" into real You/model turns by timestamp (your side=parakeet, model side=server text, more accurate than parakeet on the TTS track)
+function renderInterleaved(tr){
+  const label = MODEL_LABEL[selModel] || 'Model';
+  const uu = groupUtts(tr.user && tr.user.words).map(x=>({...x,who:'user'}));
+  const mm = (modelTx.length ? groupModelTx()                       // if there's server text → use it (authoritative)
+                             : groupUtts(tr.model && tr.model.words)).map(x=>({...x,who:'model'}));
+  const all = uu.concat(mm).sort((a,b)=>a.t0-b.t0);
+  if(!all.length) return;
+  $('#turns').innerHTML='';
+  for(const s of all){
+    const el=document.createElement('div'); el.className='turn '+s.who;
+    el.innerHTML=`<div class="who">${s.who==='user'?'You':esc(label)} `+
+                 `<span class="mut" style="font-weight:400;font-size:10px;">${s.t0.toFixed(1)}s</span></div>`+
+                 `<div class="txt">${esc(s.text)}</div>`;
+    $('#turns').appendChild(el);
+  }
+}
+
+// —— Play model audio (scheduled continuously by playhead) ——
+function playPcm(buf){
+  if(!ctx) return;
+  const i16=new Int16Array(buf), f32=new Float32Array(i16.length);
+  for(let i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+  const ab=ctx.createBuffer(1,f32.length,SR); ab.copyToChannel(f32,0);
+  const s=ctx.createBufferSource(); s.buffer=ab; s.connect(ctx.destination);
+  const now=ctx.currentTime;
+  if(playhead<now) playhead=now+0.04;
+  s.start(playhead); playhead+=ab.duration; scheduled.push(s);
+  s.onended=()=>{ scheduled=scheduled.filter(x=>x!==s); };
+}
+function clearPlayback(){                       // user barges in → immediately stop the queued model audio
+  scheduled.forEach(s=>{try{s.stop()}catch(e){}}); scheduled=[]; playhead=0;
+}
+function feedWorklet(buf){                       // relay's already-decoded 24k PCM16 → Float32 frames fed to the same worklet as the official client (low latency + auto catch-up on dropped packets)
+  const i16=new Int16Array(buf), f32=new Float32Array(i16.length);
+  for(let i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+  worklet.port.postMessage({type:'audio', frame:f32, micDuration:0}, [f32.buffer]);
+}
+
+async function start(){
+  if(running) return;
+  $('#startBtn').disabled=true; $('#state').innerHTML='<span class="dot"></span> Connecting…';
+  $('#turns').innerHTML=''; $('#rec').style.display='none'; curUser=curModel=null; modelTx=[]; lastModelTs=0;
+  $('#asrOut').innerHTML=''; $('#asrState').textContent='';
+  $('#gradeOut').innerHTML=''; $('#gradeState').textContent='';
+  selModel=$('#model').value;
+  const useOpus=NEEDS_WS(selModel);        // moshi/personaplex → browser opus-recorder encoding (same as the official web UI)
+  ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:SR});   // play server audio
+  await ctx.resume();
+  // Moshi/PersonaPlex (both use the moshi protocol, same as the official frontend) and if ctx actually gives 24k → use the same low-latency worklet as the official client; otherwise fall back to playPcm (non-24k will change pitch)
+  useWorklet=(NEEDS_WS(selModel) && ctx.sampleRate===SR); worklet=null;
+  if(NEEDS_WS(selModel) && ctx.sampleRate!==SR) console.warn('ctx is not 24k('+ctx.sampleRate+'), falling back to playPcm');
+  if(useWorklet){
+    try{
+      await ctx.audioWorklet.addModule('/static/moshi-processor.js');
+      worklet=new AudioWorkletNode(ctx,'moshi-processor',{outputChannelCount:[1]}); worklet.connect(ctx.destination);
+      worklet.port.postMessage({type:'reset'});
+    }catch(e){ useWorklet=false; worklet=null; console.warn('worklet failed to start, falling back to playPcm:',e); }
+  }
+  if(!useOpus){                            // ScriptProcessor path (gpt/gemini) grabs the mic first; the opus path lets opus-recorder grab it itself
+    try{ micStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true}}); }
+    catch(e){ $('#state').innerHTML=`<span class="err">Can't access the mic: ${e}</span>`; $('#startBtn').disabled=false; return; }
+  }
+  const sil=parseInt($('#silence').value)||500;
+  const proto=location.protocol==='https:'?'wss':'ws';
+  let wsurl=`${proto}://${location.host}/ws/live?model=${selModel}&silence_ms=${sil}`;
+  if(NEEDS_WS(selModel)){
+    let murl=$('#moshiUrl').value.trim()||'ws://localhost:8998/api/chat';
+    if(selModel==='personaplex'){                       // PersonaPlex needs voice_prompt (+ optional persona)
+      const q=[];
+      const vp=$('#voicePrompt').value.trim(); if(vp) q.push('voice_prompt='+encodeURIComponent(vp));
+      // text_prompt must be non-empty: empty makes the server's text_prompt_tokens=None and crashes when initializing the system prompt
+      const tp=$('#textPrompt').value.trim() || 'You are a friendly, helpful assistant having a natural spoken conversation.';
+      q.push('text_prompt='+encodeURIComponent(tp));
+      murl+=(murl.includes('?')?'&':'?')+q.join('&');
+    }
+    wsurl+=`&moshi_url=${encodeURIComponent(murl)}`;
+  }
+  if(selModel==='freezeomni'){                          // FreezeOmni: Socket.IO server address + optional system prompt
+    const furl=$('#moshiUrl').value.trim()||'https://localhost:8081';
+    wsurl+=`&fo_url=${encodeURIComponent(furl)}`;
+    const pr=$('#textPrompt').value.trim(); if(pr) wsurl+=`&prompt=${encodeURIComponent(pr)}`;
+  }
+  ws=new WebSocket(wsurl);
+  ws.binaryType='arraybuffer';
+
+  ws.onmessage=(ev)=>{
+    if(typeof ev.data!=='string'){ if(useWorklet&&worklet) feedWorklet(ev.data); else playPcm(ev.data); return; }
+    let d; try{ d=JSON.parse(ev.data); }catch(e){ return; }
+    if(d.type==='ready'){ $('#state').innerHTML='<span class="dot"></span> In conversation -- just speak, pause when done and it replies'; }
+    else if(d.type==='model_text'){ modelTx.push({t:(typeof d.t==='number'?d.t:0), text:d.text}); addModel(d.text); }
+    else if(d.type==='user_text') addUser(d.text);
+    else if(d.type==='user_text_done'){ if(!curUser && d.text) addUser(d.text); curUser=null; }
+    else if(d.type==='clear') clearPlayback();
+    else if(d.type==='err') addModel(`⚠️ ${d.text}`);
+    else if(d.type==='done') finish(d);
+  };
+  ws.onclose=()=>{ if(running) teardown(); };
+  ws.onerror=()=>{ $('#state').innerHTML='<span class="err">Connection error</span>'; };
+  ws.onopen=async ()=>{
+    if(useOpus){
+      // opus-recorder: exactly the same encoding as the official web UI → send opus to the relay to forward directly (no more server-side sphn encoding)
+      try{
+        opusRec=new Recorder({
+          encoderPath:'/static/encoderWorker.min.js',
+          encoderSampleRate:24000, encoderFrameSize:20, numberOfChannels:1,
+          encoderComplexity:0, encoderApplication:2049, streamPages:true,
+          maxFramesPerPage:2, recordingGain:1, resampleQuality:3,
+        });
+        opusRec.ondataavailable=(buf)=>{ if(ws&&ws.readyState===1) ws.send(buf); };
+        await opusRec.start();                 // opus-recorder does its own getUserMedia
+      }catch(e){ $('#state').innerHTML=`<span class="err">opus-recorder failed to start: ${e}</span>`; }
+    } else {
+      // mic → PCM16@24k → ws (gpt/gemini/freezeomni)
+      src=ctx.createMediaStreamSource(micStream);
+      // FreezeOmni wants low latency: small chunks (512≈21ms, close to the official demo's 16ms) get your speech to the server faster; gpt/gemini stay at 2048
+      proc=ctx.createScriptProcessor(selModel==='freezeomni'?512:2048,1,1);
+      gain=ctx.createGain(); gain.gain.value=0;               // don't play the mic back through the speakers
+      src.connect(proc); proc.connect(gain); gain.connect(ctx.destination);
+      proc.onaudioprocess=(e)=>{
+        const f=e.inputBuffer.getChannelData(0);
+        let peak=0; const pcm=new Int16Array(f.length);
+        for(let i=0;i<f.length;i++){ const s=Math.max(-1,Math.min(1,f[i])); pcm[i]=s<0?s*0x8000:s*0x7fff; if(Math.abs(f[i])>peak)peak=Math.abs(f[i]); }
+        $('#meterFill').style.width=Math.min(100,peak*160)+'%';
+        if(ws&&ws.readyState===1) ws.send(pcm.buffer);
+      };
+    }
+    running=true; $('#stopBtn').disabled=false;
+  };
+}
+
+function stop(){
+  if(!running) return;
+  $('#state').innerHTML='<span class="dot"></span> Wrapping up, writing the recording…';
+  $('#stopBtn').disabled=true;
+  try{ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'bye'})); }catch(e){}
+  // stop mic capture (keep ws/ctx to receive the model's trailing audio + done message)
+  try{ if(opusRec){ opusRec.stop(); opusRec=null; } }catch(e){}
+  try{ proc&&(proc.onaudioprocess=null); src&&src.disconnect(); proc&&proc.disconnect(); }catch(e){}
+  try{ micStream&&micStream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  $('#meterFill').style.width='0%';
+}
+
+let lastRec=null;
+function finish(d){
+  lastRec=d;
+  $('#state').innerHTML=`<span class="ok">✓ Done (${d.secs}s)</span>`;
+  const mm=d.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  window.__runDir=`${mm[1]}/${mm[2]}`; window.__sid=`${mm[1]}_${mm[2]}`;
+  $('#recMeta').innerHTML=`<span class="pill" style="user-select:all;">Session ${esc(mm[1]||'?')}</span><span class="pill">${MODEL_LABEL[selModel]||selModel}</span><span class="pill">${d.secs}s</span>`;
+  const bust='?t='+Date.now();
+  $('#aCombined').src=d.combined_url+bust; $('#aUser').src=d.A_url+bust; $('#aModel').src=d.B_url+bust;
+  $('#rec').style.display='block';
+  teardown();
+}
+
+// Download all: full conversation + separate tracks + parakeet packed into a zip (folder name carries the session id, includes a parakeet catch-up run)
+$('#dlAll').onclick=async ()=>{
+  if(!lastRec || !window.__runDir) return;
+  const btn=$('#dlAll'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='Packing… (including parakeet catch-up run)';
+  try{
+    const r=await fetch(`/api/download_run?dir=${encodeURIComponent(window.__runDir)}`);
+    if(!r.ok) throw new Error(await r.text());
+    const blob=await r.blob(); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${window.__sid}.zip`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }catch(e){ alert('Download failed: '+e); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+};
+
+// —— Local parakeet transcription (on this session's separate tracks) ——
+$('#asrBtn').onclick=async ()=>{
+  if(!lastRec) return;
+  const m = lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//) || [];
+  const dir = `${m[1]}/${m[2]}`;
+  $('#asrBtn').disabled=true;
+  $('#asrState').innerHTML='<span class="dot"></span> Local parakeet transcribing… (first run loads the model, a few seconds)';
+  try{
+    const r=await fetch('/api/parakeet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dir})});
+    const d=await r.json();
+    if(d.error){ $('#asrState').innerHTML=`<span class="err">${d.error}</span>`; }
+    else { $('#asrState').innerHTML='<span class="ok">✓ Done</span>'; renderAsr(d.tracks); }
+  }catch(e){ $('#asrState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#asrBtn').disabled=false; }
+};
+function esc(s){ return String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+// collapsible JSON + one-click copy (the summary has "📋 Copy", works even when collapsed)
+function jsonDetails(label, obj, open){
+  const json = JSON.stringify(obj, null, 1);
+  return `<details${open?' open':''} style="margin-top:6px;">`+
+    `<summary class="mut" style="cursor:pointer;font-size:12px;">${label} `+
+    `<button class="copyjson" style="background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:6px;padding:1px 8px;font-size:11px;cursor:pointer;margin-left:6px;">📋 Copy</button></summary>`+
+    `<pre style="margin-top:4px;background:#0f1219;border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow:auto;max-height:380px;font:11px/1.5 ui-monospace,monospace;white-space:pre;">${esc(json)}</pre></details>`;
+}
+document.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest && ev.target.closest('.copyjson');
+  if(!btn) return;
+  ev.preventDefault(); ev.stopPropagation();     // don't trigger <details> expand/collapse
+  const pre = btn.closest('details') && btn.closest('details').querySelector('pre');
+  if(!pre) return;
+  try { await navigator.clipboard.writeText(pre.textContent); }
+  catch(_){ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection();
+            s.removeAllRanges(); s.addRange(r); try{document.execCommand('copy');}catch(e){} s.removeAllRanges(); }
+  const old=btn.textContent; btn.textContent='✓ Copied'; setTimeout(()=>{btn.textContent=old;},1200);
+});
+function renderAsr(tr){
+  const block=(label,t)=>{
+    if(!t) return '';
+    if(t.error) return `<div style="margin-top:10px;"><div class="mut">${label}</div><span class="err">${t.error}</span></div>`;
+    const words=(t.words||[]).map(w=>`<span title="${w.t0}s–${w.t1}s">${esc(w.word)}<sub style="opacity:.45;font-size:9px;">${w.t0}</sub></span>`).join(' ');
+    return `<div style="margin-top:12px;"><div class="mut" style="margin-bottom:3px;">${label} (${(t.words||[]).length} words)</div>`+
+           `<div style="background:#0f1219;border:1px solid var(--line);border-radius:8px;padding:8px 10px;">${esc(t.text||'(none)')}</div>`+
+           ((t.words||[]).length?`<details style="margin-top:4px;"><summary class="mut" style="cursor:pointer;font-size:12px;">word-level timestamps</summary>`+
+              `<div style="margin-top:4px;line-height:1.9;">${words}</div></details>`:'')+
+           jsonDetails('raw JSON', t, false)+
+           `</div>`;
+  };
+  let out = block('🅐 Your track', tr.user);
+  if(modelTx.length){                              // model side: the server text is authoritative; parakeet on synthesized audio often drops words (e.g. a time answer)
+    const srv = modelTx.map(m=>m.text).join('').trim();
+    out += `<div style="margin-top:12px;"><div class="mut" style="margin-bottom:3px;">🅑 Model track (server text · authoritative)</div>`+
+           `<div style="background:#0f1219;border:1px solid var(--line);border-radius:8px;padding:8px 10px;">${esc(srv||'(none)')}</div>`+
+           (tr.model?jsonDetails('parakeet on the TTS track (reference only, often inaccurate on synthesized audio)', tr.model, false):'')+`</div>`;
+  } else {
+    out += block('🅑 Model track', tr.model);
+  }
+  $('#asrOut').innerHTML = out;
+  if(NEEDS_URL(selModel)) renderInterleaved(tr);   // moshi/personaplex/freezeomni: reorder the "conversation log" into You/model turns by timestamp
+}
+function teardown(){
+  running=false;
+  try{ clearPlayback(); }catch(e){}
+  try{ if(worklet){ worklet.disconnect(); worklet.port.postMessage({type:'reset'}); worklet=null; } }catch(e){}
+  useWorklet=false;
+  try{ ctx&&ctx.close(); }catch(e){} ctx=null;
+  $('#startBtn').disabled=false; $('#stopBtn').disabled=true;
+}
+
+$('#startBtn').onclick=start;
+$('#stopBtn').onclick=stop;
+$('#model').onchange=syncModelUI; syncModelUI();
+
+// —— Generate ground truth from a dialogue (inline, not stored to S3) ——
+let genBenchmark=null;
+$('#genBenchBtn').onclick=async ()=>{
+  const dialogue=$('#genDlg').value.trim();
+  if(!dialogue){ $('#genBenchState').innerHTML='<span class="err">Paste a dialogue first</span>'; return; }
+  $('#genBenchBtn').disabled=true; $('#genBenchOut').innerHTML='';
+  $('#genBenchState').innerHTML='<span class="dot"></span> Generating (LLM annotating trigger word + correct response)…';
+  try{
+    const r=await fetch('/api/gen_benchmark',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({dialogue, category:$('#genCat').value})});
+    const d=await r.json();
+    if(d.error){ $('#genBenchState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else {
+      genBenchmark=d.benchmark;
+      let extra='';
+      if(d.content_only){ $('#gradeGemini').checked=true; extra=' · content-only item, Gemini auto-checked (judges answer correctness)'; }
+      $('#genBenchState').innerHTML=`<span class="ok">✓ Generated, grading will score against it</span><span class="mut">${extra}</span>`;
+      renderGenBench(d);
+    }
+  }catch(e){ $('#genBenchState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#genBenchBtn').disabled=false; }
+};
+function renderGenBench(d){
+  const mid = d.content_only
+    ? `judges <b>content correctness</b> (no timing)`
+    : `trigger word <code>${esc(d.anchor_word)}</code>`;
+  const summary=`<div style="margin-top:8px;padding:8px 10px;background:#0f1219;border:1px solid var(--line);border-radius:8px;font-size:13px;">`+
+    `Category <b>${esc(d.category)}</b>&nbsp;&nbsp;${mid}&nbsp;&nbsp;Ground truth <b>${esc(d.target_response)}</b>`+`</div>`;
+  $('#genBenchOut').innerHTML=summary+jsonDetails('benchmark.json (ground truth)', d.benchmark, false);
+}
+
+// —— Grade: live recording against ground truth ——
+const GM = {pass:'✅', fail:'❌', early:'❌ early', late:'❌ late', uncertain:'❓', 'n/a':'—'};
+$('#gradeBtn').onclick=async ()=>{
+  if(!genBenchmark){ $('#gradeState').innerHTML='<span class="err">Use "🛠 Generate ground truth from dialogue" above to generate one first</span>'; return; }
+  if(!lastRec){ $('#gradeState').innerHTML='<span class="err">Record a conversation first</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  const run_dir=`${m[1]}/${m[2]}`;
+  $('#gradeBtn').disabled=true; $('#gradeOut').innerHTML='';
+  $('#gradeState').innerHTML='<span class="dot"></span> Grading…';
+  try{
+    const r=await fetch('/api/grade_live',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({run_dir, benchmark:genBenchmark, variant:'A', gemini:$('#gradeGemini').checked})});
+    const d=await r.json();
+    if(d.error){ $('#gradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#gradeState').innerHTML='<span class="ok">✓</span>'; renderGrade(d); }
+  }catch(e){ $('#gradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#gradeBtn').disabled=false; }
+};
+function gradeEvRow(r){
+  if(!('timing' in r) && !('content' in r))
+    return `<div style="border-top:1px solid var(--line);padding:8px 0;"><span class="err">⚠️ ${esc(r.event||'?')} — ${esc(r.status||'')}</span>${r.note?` <span class="mut">${esc(r.note)}</span>`:''}</div>`;
+  const mark=r.status==='pass'?'✅':'❌';
+  let dims;
+  if('timing' in r && 'latency_ms' in r.timing){
+    dims=`①${GM[r.timing.status]||r.timing.status} ②${GM[(r.overlap||{}).status]||'—'} ③${GM[(r.content||{}).status]||'—'}`
+        +(('silence' in r)?` ④${GM[r.silence.status]||r.silence.status}`:'')
+        +`&nbsp;&nbsp;<span class="mut">${r.timing.latency_ms}ms (window ${r.window_ms?r.window_ms.join('~'):'—'})</span>`;
+  } else if('timing' in r){
+    dims=`<span class="err">${esc(r.timing.status)}</span>`;
+  } else {
+    dims=`③${GM[(r.content||{}).status]||'—'}&nbsp;&nbsp;<span class="mut">content event</span>`;
+  }
+  return `<div style="border-top:1px solid var(--line);padding:8px 0;"><div>${mark} <b>${esc(r.event)}</b> <span class="mut">[${esc(r.category||'')}/${esc(r.action||'')}]</span>&nbsp;&nbsp;${dims}</div>`+
+    jsonDetails('Four-dimension breakdown', r, false)+`</div>`;
+}
+function renderGrade(d){
+  const s=d.summary||{};
+  let html=`<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:20px;font-weight:700;">${((s.rate||0)*100).toFixed(0)}% <span class="mut" style="font-size:13px;font-weight:400;">Events PASS ${s.npass||0}/${s.n||0} · ${esc(d.category||'')} · variant ${esc(d.variant||'')}</span></div>`;
+  if(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    html+=`<div class="mut"><span class="err">⚠️ Gemini checked but no key found → content uses ASR only</span></div>`;
+  html+=`</div>`+(d.events||[]).map(gradeEvRow).join('');
+  $('#gradeOut').innerHTML=html;
+}
+</script>
+</body>
+</html>

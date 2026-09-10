@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Voice Eval Console · Live TTS Conversation</title>
+<style>
+  :root { --bg:#0f1117; --card:#181b24; --line:#2a2f3a; --fg:#e6e8ee; --mut:#9aa3b2; --acc:#5b8cff; --ok:#3ecf8e; --rec:#ff5b6e; --warn:#e6b450; --user:#5b8cff; --model:#3ecf8e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:28px 20px 60px; }
+  a { color:var(--acc); text-decoration:none; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  .sub { color:var(--mut); margin:0 0 24px; font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:18px; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  select, button, input, textarea { font:inherit; border-radius:8px; border:1px solid var(--line); }
+  input, textarea { background:#0f1219; color:var(--fg); padding:6px 8px; }
+  select { background:#0f1219; color:var(--fg); padding:8px 10px; }
+  button { background:var(--acc); color:#fff; border:none; padding:10px 18px; cursor:pointer; font-weight:600; }
+  button:hover { filter:brightness(1.08); }
+  button:disabled { opacity:.45; cursor:default; }
+  button.stop { background:var(--rec); }
+  button.warn { background:var(--warn); color:#22262e; }
+  button.ghost { background:transparent; border:1px solid var(--line); color:var(--fg); }
+  .mut { color:var(--mut); font-size:13px; }
+  .ok { color:var(--ok); } .err { color:var(--rec); } .warnt { color:var(--warn); }
+  audio { width:100%; margin-top:10px; }
+  .dot { width:9px; height:9px; border-radius:50%; background:var(--rec); display:inline-block; animation:blink 1s infinite; }
+  .dot.pause { background:var(--warn); animation:none; }
+  @keyframes blink { 50% { opacity:.25; } }
+  #turns { margin-top:6px; }
+  .turn { padding:8px 12px; border-radius:10px; margin:8px 0; max-width:85%; white-space:pre-wrap; }
+  .turn.user { background:rgba(91,140,255,.13); border:1px solid rgba(91,140,255,.35); margin-left:auto; }
+  .turn.model { background:rgba(62,207,142,.12); border:1px solid rgba(62,207,142,.35); }
+  .turn .who { font-size:11px; color:var(--mut); margin-bottom:2px; }
+  textarea#reply { width:100%; min-height:70px; resize:vertical; font-size:14px; padding:10px 12px; }
+  .steps { font-size:12px; color:var(--mut); line-height:1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sub"><a href="/">← Back to input console</a> · <a href="/live">Live microphone conversation</a></p>
+  <h1>⌨️ Live TTS Conversation</h1>
+  <p class="sub">No microphone needed: you <b>type → generate TTS → feed the model</b>. These models are full-duplex "input-driven" — if you don't send audio they <b>freeze</b> (internal state doesn't advance). So click "Start reply" to freeze the model (you can interrupt it mid-sentence), type and generate TTS at your own pace, then "End reply" sends this line in and the model continues. The whole session is recorded on two tracks and can be scored. PersonaPlex / Moshi / FreezeOmni only.</p>
+
+  <!-- Generate the gold answer from a conversation -->
+  <div class="card" style="border-color:#3a5a4a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🛠 Generate gold answer from a conversation</h2>
+    <div class="mut" style="margin-bottom:8px;">Paste an <b>A (you) / B (AI)</b> conversation → the LLM auto-labels the <b>trigger word + correct response</b> → generates a benchmark (same schema as grading). Grading scores against it directly (nothing lands in S3); "Download all" packages the gold answer plus this conversation's original text together.</div>
+    <textarea id="genDlg" placeholder="A: I am learning english, can you correct my grammar if I mess up?&#10;B: Sure&#10;A: Yesterday I go to my friend's place&#10;B: You should say I went"
+              style="width:100%;min-height:110px;font:13px/1.5 ui-monospace,monospace;"></textarea>
+    <div class="row" style="margin-top:8px;">
+      <label class="mut">Category
+        <select id="genCat" style="margin-left:6px;padding:5px 8px;">
+          <option value="auto">auto (let the LLM decide)</option>
+          <option value="grammar_correction">grammar_correction · fix grammar</option>
+          <option value="wrong_word_correction">wrong_word_correction · fix wrong word</option>
+          <option value="logic_puzzle">logic_puzzle · Q&A/puzzle (judge answer right/wrong)</option>
+          <option value="keyword_wait">keyword_wait · wait for keyword</option>
+          <option value="forbidden_phrase_interruption">forbidden_phrase · interrupt on forbidden word</option>
+          <option value="deliberate_overlap">deliberate_overlap · deliberate overlap</option>
+          <option value="countdown_completion">countdown_completion · finish the countdown</option>
+          <option value="predictive_number_continuation">predictive_number · continue the sequence</option>
+          <option value="phrase_completion">phrase_completion · complete the famous phrase</option>
+          <option value="alternating_count">alternating_count · alternating count</option>
+          <option value="stay_quiet_until_help">stay_quiet_until_help · stay quiet on standby</option>
+        </select>
+      </label>
+      <button id="genBenchBtn" class="ghost">🛠 Generate gold answer</button>
+      <span id="genBenchState" class="mut"></span>
+    </div>
+    <details style="margin-top:10px;">
+      <summary class="mut" style="cursor:pointer;font-size:13px;">Or ⤵ <b>paste a gold-answer benchmark.json directly</b> (e.g. a ready-made one from test_set, no generation needed)</summary>
+      <textarea id="pasteBench" placeholder='{"category":"logic_puzzle","expected_events":[{"graded":true,"grade_dimension":"content","trigger":null,"target_response":"..."}]}'
+                style="width:100%;min-height:90px;margin-top:6px;font:12px/1.5 ui-monospace,monospace;"></textarea>
+      <div class="row" style="margin-top:6px;">
+        <button id="pasteBenchBtn" class="ghost">📋 Load pasted gold answer</button>
+        <span id="pasteBenchState" class="mut"></span>
+      </div>
+    </details>
+    <div id="genBenchOut"></div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <label class="mut">Model
+        <select id="model" style="margin-left:6px;">
+          <option value="freezeomni">FreezeOmni (Socket.IO · raw PCM)</option>
+          <option value="moshi">Moshi (GPU · full-duplex)</option>
+          <option value="personaplex">PersonaPlex (GPU · Moshi architecture)</option>
+          <option value="gpt">GPT Realtime (API · feed pre-recorded audio)</option>
+          <option value="gemini">Gemini Live (API · feed pre-recorded audio)</option>
+        </select>
+      </label>
+      <label class="mut" id="urlWrap">Model address
+        <input id="modelUrl" value="https://localhost:8081" style="width:300px;">
+      </label>
+    </div>
+    <div class="row" id="promptRow" style="margin-top:10px;">
+      <label class="mut" id="voiceLabel" style="display:none;">Voice (PersonaPlex)
+        <select id="voicePrompt" style="padding:5px 8px;">
+          <optgroup label="Natural · female"><option>NATF0.pt</option><option>NATF1.pt</option><option>NATF2.pt</option><option>NATF3.pt</option></optgroup>
+          <optgroup label="Natural · male"><option>NATM0.pt</option><option>NATM1.pt</option><option>NATM2.pt</option><option>NATM3.pt</option></optgroup>
+          <optgroup label="Varied · female"><option>VARF0.pt</option><option>VARF1.pt</option><option>VARF2.pt</option><option>VARF3.pt</option><option>VARF4.pt</option></optgroup>
+          <optgroup label="Varied · male"><option>VARM0.pt</option><option>VARM1.pt</option><option>VARM2.pt</option><option>VARM3.pt</option><option>VARM4.pt</option></optgroup>
+        </select>
+      </label>
+      <label class="mut" style="flex:1;">System prompt<input id="sysPrompt" value="You are a friendly, helpful assistant having a natural spoken conversation. Always reply in English." style="width:100%;"></label>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <button id="startBtn">▶ Start conversation</button>
+      <button id="stopBtn" class="stop" disabled>■ Stop</button>
+      <span id="state" class="mut">Pick a model → start conversation → use "Start reply" below to compose your line</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="mut" style="margin-bottom:4px;">Conversation log</div>
+    <div id="turns"></div>
+  </div>
+
+  <!-- Reply composer -->
+  <div class="card" id="composer" style="display:none;border-color:#3a4a6a;">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+      <h2 style="font-size:15px;margin:0;">🗣️ Your reply (TTS)</h2>
+      <span id="turnState" class="mut"></span>
+    </div>
+    <div class="steps" style="margin-bottom:10px;">
+      ① Click "Start reply" → model freezes (you can interrupt it now) · ② Type → generate TTS · ③ Click "End reply" → send into the model, continue
+    </div>
+    <div class="row" style="margin-bottom:8px;">
+      <button id="pauseBtn" class="warn" disabled>⏸ Start reply (freeze model)</button>
+      <label class="mut">TTS voice
+        <select id="ttsVoice" style="padding:5px 8px;"><option>Mia</option><option>Chloe</option><option>Milo</option><option>Dean</option></select>
+      </label>
+    </div>
+    <textarea id="reply" placeholder="Click 'Start reply' to freeze the model first, then type here…" disabled></textarea>
+    <div class="row" style="margin-top:8px;">
+      <button id="genBtn" class="ghost" disabled>🔊 Generate TTS</button>
+      <span id="genState" class="mut"></span>
+      <audio id="clipAudio" controls style="display:none;flex-basis:100%;"></audio>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <button id="sendBtn" disabled>▶ End reply (send into the model, continue)</button>
+    </div>
+  </div>
+
+  <!-- Multi-turn test: type→TTS→send→model responds→interrupt→keep typing→send at the interrupt point (loop) -->
+  <div class="card" id="mtPanel" style="display:none;border-color:#3a5a5a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🔁 Multi-turn test (type→send→freeze→reply, loop)</h2>
+    <div class="steps" style="margin-bottom:8px;">① Type → "▶ Send" = generate TTS and send to the model, which responds normally · ② When you want to cut in <b>or the model finishes and you need to think of your next line</b>, click "⏸ Freeze time" to stop the model — <b>while frozen, time doesn't advance and the recording gets no dead silence</b>, so you can think and type/generate TTS at your leisure · ③ Once ready, click "▶ Send and continue" = send it from the moment you froze · ④ loop.</div>
+    <textarea id="mtText" placeholder="Type what you want to say…(for the first line just click '▶ Send'; after that, to cut in or take a moment, click '⏸ Freeze time' first, type at your leisure, then '▶ Send and continue')" style="width:100%;min-height:52px;font-size:14px;"></textarea>
+    <div class="row" style="margin-top:8px;">
+      <button id="mtSend">▶ Send (model responds normally)</button>
+      <button id="mtInterrupt" class="warn" disabled>⏸ Freeze time (interrupt / think)</button>
+      <button id="mtSendAt" disabled>▶ Send and continue</button>
+      <span id="mtState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:11px;margin-top:4px;">"⏸ Freeze time" = freeze the model's clock (click while it's talking = interrupt; click after it finishes = pause to think). Mainly for full-duplex models (moshi / personaplex / freezeomni); gpt / gemini use server-side VAD, don't freeze, so just chaining "▶ Send" gives you multi-turn. TTS voice uses the selection in "Your reply" above.</div>
+  </div>
+
+  <!-- Interruption test: user interrupts the model (aligned with v1 user_interruption) -->
+  <div class="card" id="intPanel" style="display:none;border-color:#5a3a4a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🚹 Interruption test (user interrupts the model)</h2>
+    <div class="steps" style="margin-bottom:8px;">① Send the first line (get the model talking for a while) → ② when it's halfway through, click "🚹 Interrupt" to <b>freeze</b> it (stopped there, waiting for you) → ③ calmly type the "interrupting line" + generate TTS → ④ click "Send interruption" to <b>unfreeze and lay it over</b>, so the model keeps talking while you interrupt → stop→run parakeet→grade interruption.</div>
+    <textarea id="intFirst" placeholder="First line (draws out a longer answer from the model), e.g.: Tell me a long story about your day." style="width:100%;min-height:48px;font-size:14px;"></textarea>
+    <div class="row" style="margin-top:6px;">
+      <button id="intSend1">① ▶ Send first line</button>
+      <button id="intFreeze" class="warn" disabled>② 🚹 Interrupt (freeze model)</button>
+      <span id="intState" class="mut"></span>
+    </div>
+    <textarea id="intInterrupt" placeholder="③ Interrupting line (type calmly after the model freezes), e.g.: Wait, sorry — what's two plus two?" style="width:100%;min-height:40px;font-size:14px;margin-top:10px;" disabled></textarea>
+    <div class="row" style="margin-top:6px;">
+      <button id="intGenTts" class="ghost" disabled>③ 🔊 Generate TTS</button>
+      <button id="intSendBreak" disabled>④ ▶ Send interruption (unfreeze + lay over)</button>
+    </div>
+  </div>
+
+  <!-- Pause test: user pauses mid-sentence, should the model jump in (aligned with v1 pause_handling) -->
+  <div class="card" id="pausePanel" style="display:none;border-color:#4a5a3a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">⏸ Pause test (user pauses mid-sentence, should the model jump in)</h2>
+    <div class="steps" style="margin-bottom:8px;">① Send the first half (<b>no freeze</b>) → ② <b>deliberately wait 2-3 seconds</b> (this is the "pause", the model is listening) → ③ send the second half → stop→run parakeet→grade pause. Tests whether, during the pause, the model <b>treats the pause as done and grabs the floor</b>.</div>
+    <textarea id="pauseFirst" placeholder="First half (a half-sentence, clearly unfinished), e.g.: So I was thinking about..." style="width:100%;min-height:44px;font-size:14px;"></textarea>
+    <textarea id="pauseSecond" placeholder="Second half (completes the sentence), e.g.: ...maybe going to the store this weekend." style="width:100%;min-height:44px;font-size:14px;margin-top:6px;"></textarea>
+    <div class="row" style="margin-top:6px;">
+      <button id="pauseGen" class="ghost">① 🔊 Generate both TTS clips</button>
+      <button id="pauseSend1" disabled>② ▶ Send first half</button>
+      <button id="pauseSend2" disabled>③ ▶ Send second half (wait 2-3 sec first)</button>
+      <span id="pauseState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:11px;margin-top:2px;">Both clips are synthesized first, so sending each half is <b>instant</b> → the pause = the few seconds you wait, with no TTS latency mixed in.</div>
+  </div>
+
+  <!-- User backchannel test: user says "mm-hm" while the model talks, shouldn't get derailed (aligned with v1.5 user_backchannel) -->
+  <div class="card" id="ubPanel" style="display:none;border-color:#3a4a5a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🗣 User backchannel test (user says "mm-hm" while the model talks, shouldn't get derailed)</h2>
+    <div class="steps" style="margin-bottom:8px;">① Send a prompt line (draws out a <b>long stretch of talk</b> from the model) → ② while the model is talking, <b>drop in a few short acknowledgments</b> (ok/mhm, no freeze, laid over the model's voice) → stop→run parakeet→grade. Tests whether the model <b>stops or changes course</b> when acknowledged (a good model should keep going = C_RESUME).</div>
+    <select id="ubPromptSel" style="width:100%;font-size:13px;margin-bottom:6px;">
+      <option value="">— Pick a common prompt line (draws out a long answer), or write your own below —</option>
+      <option>Explain how photosynthesis works, step by step.</option>
+      <option>Tell me the story of how the internet was invented.</option>
+      <option>Walk me through how to make a good cup of coffee from scratch.</option>
+      <option>Describe what happens in your body when you exercise.</option>
+      <option>Explain the water cycle in detail.</option>
+      <option>Give me a detailed recipe for chocolate chip cookies.</option>
+      <option>Tell me about the history of the Roman Empire.</option>
+      <option>Explain how a car engine works.</option>
+      <option>Describe, in detail, how a bill becomes a law.</option>
+      <option>Tell me everything I should know before my first trip to Japan.</option>
+    </select>
+    <textarea id="ubPrompt" placeholder="Prompt line (draws out a long answer) — pick above, or write your own" style="width:100%;min-height:44px;font-size:14px;"></textarea>
+    <div class="row" style="margin-top:6px;">
+      <select id="ubWord" style="width:120px;font-size:14px;" title="Acknowledgment word (short, backchannel-style, doesn't grab the floor; spelled so the chosen TTS reads it right)">
+        <option>mhm</option><option>uh huh</option><option>yeah</option><option>yep</option>
+        <option>right</option><option>ok</option><option>I see</option><option>gotcha</option>
+        <option>sure</option><option>got it</option>
+      </select>
+      <button id="ubGen" class="ghost">① 🔊 Generate (prompt line + acknowledgment)</button>
+      <button id="ubSendPrompt" disabled>② ▶ Send prompt line</button>
+      <button id="ubInject" disabled>③ ▶ Drop in acknowledgment (click while model talks, multiple ok)</button>
+      <span id="ubState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:11px;margin-top:2px;">Acknowledgments should be <b>short</b> (ok/mm/yeah) — a full sentence becomes an "interruption" or "someone else talking". Click ③ while the model is talking, a few times in a row is fine.</div>
+  </div>
+
+  <!-- Batch input: pick a bunch of pre-recorded wav (e.g. test_set's A1/A2), send them to the model one by one -->
+  <div class="card" id="batchPanel" style="display:none;border-color:#5a4a3a;">
+    <h2 style="font-size:15px;margin:0 0 4px;">🎯 Pre-recorded audio input (feed the model)</h2>
+    <div class="mut" style="margin-bottom:8px;">Drag in a batch of wav files (e.g. A1, A2 from a conversation) → each gets its own "▶ Send", which feeds it to the model only when clicked. <b>Works for all models</b> (personaplex / moshi / freezeomni / gpt / gemini). <b>For gpt / gemini, drag the audio in here first, then click "▶ Start conversation"</b> (they wait as soon as they connect, so prep first to avoid keeping them idle while you pick); other models can be sent to after connecting too.</div>
+    <div id="batchDrop" style="border:1.5px dashed var(--line);border-radius:10px;padding:18px;text-align:center;cursor:pointer;font-size:13px;color:var(--mut);transition:background .1s;">
+      ⬇ <b>Drop wav files here</b>, or click to choose (multi-select ok, e.g. A1.wav + A2.wav)
+    </div>
+    <input type="file" id="batchFiles" accept="audio/wav,audio/*" multiple style="display:none;">
+    <div class="row" style="margin-top:6px;">
+      <span id="batchState" class="mut"></span>
+      <button id="batchClear" class="ghost" style="margin-left:auto;padding:3px 10px;font-size:12px;">🗑 Clear</button>
+    </div>
+    <div id="batchList" style="margin-top:8px;"></div>
+  </div>
+
+  <!-- Recording + evaluation -->
+  <div class="card" id="rec" style="display:none;">
+    <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+      <h2 style="font-size:15px;margin:0;">📼 This recording</h2>
+      <button id="dlAll" class="ghost" style="padding:7px 12px;">⬇ Download all (recording+parakeet+gold answer+conversation+test results)</button>
+    </div>
+    <div id="recMeta"></div>
+    <div style="margin-top:12px;"><div class="mut" style="margin-bottom:3px;">🔊 Full conversation</div><audio id="aCombined" controls></audio></div>
+    <div style="margin-top:10px;"><div class="mut" style="margin-bottom:3px;">🅐 Your track (TTS)</div><audio id="aUser" controls></audio></div>
+    <div style="margin-top:10px;"><div class="mut" style="margin-bottom:3px;">🅑 Model track</div><audio id="aModel" controls></audio></div>
+    <div class="row" style="margin-top:16px;">
+      <button id="asrBtn" class="ghost">🎧 Run parakeet transcription (local)</button>
+      <span id="asrState" class="mut"></span>
+    </div>
+    <div id="asrOut"></div>
+    <div class="row" style="margin-top:16px;">
+      <button id="gradeBtn" class="ghost">📊 Grade (against gold answer)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="When ③ content judgment is uncertain/fail, call Gemini to listen to the audio and decide"><input type="checkbox" id="gradeGemini"> Use Gemini to judge content</label>
+      <span id="gradeState" class="mut"></span>
+    </div>
+    <div id="gradeOut"></div>
+    <div class="row" style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px;">
+      <button id="bcBtn" class="ghost">🗣 Test backchannel (acknowledgment ability)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="For short vocalizations, use Gemini first to judge 'backchannel' vs 'wants the floor / taking over'; only count it if it's a backchannel"><input type="checkbox" id="bcGemini" checked> Use Gemini to judge backchannel</label>
+      <span id="bcState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:12px;margin-top:4px;">Send in a <b>longer stretch of talk</b> all at once → see whether the model says "mm-hm/right/got it" as it listens <b>without grabbing the floor</b>. Short sounds are content-judged by AI first, and only counted once confirmed to be backchannels. No gold answer needed.</div>
+    <div id="bcOut"></div>
+    <div class="row" style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px;">
+      <button id="intBtn" class="ghost">🚹 Grade interruption (user interrupts the model)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="Use Gemini to judge whether the model's post-interruption response addresses the interrupting content"><input type="checkbox" id="intGemini" checked> Use Gemini to judge relevance</label>
+      <span id="intGradeState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:12px;margin-top:4px;">Use with "🚹 Interruption test" above: measures whether, after being interrupted, the model ① takes over a new turn ② how fast ③ whether its response addresses the interrupting content.</div>
+    <div id="intGradeOut"></div>
+    <div class="row" style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px;">
+      <button id="ttGradeBtn" class="ghost">📶 Grade turn-taking (smooth-turn)</button>
+      <span id="ttGradeState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:12px;margin-top:4px;">Say a full sentence normally and let the model reply → measures whether the model <b>replies promptly</b> (TOR↑ + latency). Computed from the last user utterance.</div>
+    <div id="ttGradeOut"></div>
+    <div class="row" style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px;">
+      <button id="pauseGradeBtn" class="ghost">⏸ Grade pause (pause handling)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="Checked: Gemini judges by intent 'taking over vs supportive continuer'; unchecked: use v1's >3 words / >1s threshold"><input type="checkbox" id="pauseGemini" checked> Use Gemini to judge intent</label>
+      <span id="pauseGradeState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:12px;margin-top:4px;">Use with "⏸ Pause test" above: measures whether, during the pause, the model <b>treats the pause as done and grabs the floor</b> (TOR↓=good). With Gemini, "go on/mm-hm" pass, while a "take-over question" counts as grabbing.</div>
+    <div id="pauseGradeOut"></div>
+    <div class="row" style="margin-top:16px;border-top:1px solid var(--line);padding-top:16px;">
+      <button id="ubGradeBtn" class="ghost">🗣 Grade backchannel robustness (user_backchannel)</button>
+      <label class="mut" style="display:flex;align-items:center;gap:5px;" title="Gemini judges the C axis: C_RESUME keeps going (good) / C_RESPOND/UNCERTAIN/UNKNOWN got derailed (bad)"><input type="checkbox" id="ubGemini" checked> Use Gemini to judge the C axis</label>
+      <span id="ubGradeState" class="mut"></span>
+    </div>
+    <div class="mut" style="font-size:12px;margin-top:4px;">Use with "🗣 User backchannel test" above: measures whether the model stops or changes course when acknowledged (should keep going = C_RESUME).</div>
+    <div id="ubGradeOut"></div>
+  </div>
+</div>
+
+<script src="/static/recorder.min.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const SR = 24000;
+const MODEL_LABEL = {moshi:'Moshi', personaplex:'PersonaPlex', freezeomni:'FreezeOmni', gpt:'GPT Realtime', gemini:'Gemini Live'};
+const USES_OPUS = m => (m === 'moshi' || m === 'personaplex');   // opus-recorder uplink + worklet playback
+const esc = s => String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+let ws=null, ctx=null, selModel='freezeomni', running=false;
+let userSource=null, sender=null, opusRec=null, opusDest=null;   // uplink: userSource(GainNode) → sender(PCM) / opusDest.stream→opus-recorder
+let paused=true, pendingClip=null;                                    // paused=model frozen; pendingClip=generated AudioBuffer waiting to send
+let worklet=null, useWorklet=false, playhead=0, scheduled=[];          // downlink playback
+let lastRec=null;
+
+// ---- Model UI ----
+const IS_API = m => (m==='gpt' || m==='gemini');   // use API key, feed pre-recorded audio, no freeze
+function syncModel(){
+  const m=$('#model').value;
+  $('#voiceLabel').style.display = (m==='personaplex') ? '' : 'none';
+  $('#urlWrap').style.display = IS_API(m) ? 'none' : '';   // gpt/gemini use an API key, no address needed
+  if(!running) $('#batchPanel').style.display = '';   // all models: you can drag audio in before the conversation to have it ready (especially gpt/gemini, which wait as soon as they connect)
+  if(IS_API(m)) return;
+  const u=$('#modelUrl');
+  if(m==='freezeomni'){ if(/8998|api\/chat|^wss?:\/\//.test(u.value)) u.value='https://localhost:8081'; }
+  else { // moshi/personaplex
+    if(/8081|^https?:\/\//.test(u.value)) u.value='ws://localhost:8998/api/chat';
+    if(m==='personaplex' && u.value.startsWith('ws://'))  u.value=u.value.replace(/^ws:/,'wss:');
+    if(m==='moshi'        && u.value.startsWith('wss://')) u.value=u.value.replace(/^wss:/,'ws:');
+  }
+}
+$('#model').onchange=syncModel; syncModel();
+
+// ---- Conversation-log bubbles ----
+function bubble(kind, who){
+  const el=document.createElement('div'); el.className='turn '+kind;
+  el.innerHTML=`<div class="who">${esc(who)}</div><div class="txt"></div>`;
+  $('#turns').appendChild(el); el.scrollIntoView({block:'end'}); return el.querySelector('.txt');
+}
+let curModel=null, lastModelTs=0, modelTx=[];
+let lastAudioTs=0, curAudioBubble=null;    // freezeomni has no text → show a placeholder bubble when audio arrives
+function addModelAudioMarker(){
+  const now=Date.now();
+  if(curAudioBubble && (now-lastAudioTs)>1500) curAudioBubble=null;   // pause >1.5s → a new response segment
+  lastAudioTs=now;
+  if(!curAudioBubble){ curAudioBubble=bubble('model', MODEL_LABEL[selModel]); curAudioBubble.textContent='🔊 Voice response (run parakeet after stopping to see the text)'; }
+}
+function addUserTurn(text){ const t=bubble('user','You (TTS)'); t.textContent=text; curModel=null; }
+function addModel(t){
+  const now=Date.now();
+  if(curModel && (now-lastModelTs)>1500) curModel=null;
+  lastModelTs=now;
+  if(!curModel) curModel=bubble('model', MODEL_LABEL[selModel]); curModel.textContent+=t;
+}
+
+// ---- Downlink playback (moshi/personaplex use the worklet; freezeomni uses sequential playPcm) ----
+function playPcm(buf){
+  if(!ctx) return;
+  const i16=new Int16Array(buf), f32=new Float32Array(i16.length);
+  for(let i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+  const ab=ctx.createBuffer(1,f32.length,SR); ab.copyToChannel(f32,0);
+  const s=ctx.createBufferSource(); s.buffer=ab; s.connect(ctx.destination);
+  const now=ctx.currentTime; if(playhead<now) playhead=now+0.04;
+  s.start(playhead); playhead+=ab.duration; scheduled.push(s);
+  s.onended=()=>{ scheduled=scheduled.filter(x=>x!==s); };
+}
+function feedWorklet(buf){
+  const i16=new Int16Array(buf), f32=new Float32Array(i16.length);
+  for(let i=0;i<i16.length;i++) f32[i]=i16[i]/32768;
+  worklet.port.postMessage({type:'audio', frame:f32, micDuration:0}, [f32.buffer]);
+}
+function onModelPcm(buf){
+  if(selModel==='freezeomni') addModelAudioMarker();   // freezeomni has no text stream → pop a placeholder bubble when audio arrives
+  if(useWorklet&&worklet) feedWorklet(buf); else playPcm(buf);
+}
+function clearPlayback(){ scheduled.forEach(s=>{try{s.stop()}catch(e){}}); scheduled=[]; playhead=0; if(worklet){try{worklet.port.postMessage({type:'reset'})}catch(e){}} }
+
+// ---- Uplink send engine ----
+// userSource(GainNode) is the "user audio stream": a TTS clip is connected to it for playback; with no clip it outputs silence.
+// PCM path (freezeomni): a ScriptProcessor reads userSource → sends PCM per frame (not while paused).
+// opus path (moshi/personaplex): opus-recorder(sourceNode:userSource) encodes continuously; paused=stop, resume=restart (a new OGG stream).
+async function buildSender(){
+  userSource = ctx.createGain(); userSource.gain.value=1;
+  if(USES_OPUS(selModel)){
+    // userSource → MediaStreamDestination: gives a continuous audio stream (silence when there's no clip) that acts as the "microphone stream".
+    // The opus stream isn't started until the first "End reply" (doResume) — turn one = the first OGG stream, don't start an empty stream at the outset.
+    opusDest = ctx.createMediaStreamDestination(); userSource.connect(opusDest);
+  } else {
+    // PCM: ScriptProcessor 512≈21ms, reads userSource and sends PCM
+    sender = ctx.createScriptProcessor(512,1,1);
+    const g0 = ctx.createGain(); g0.gain.value=0;
+    userSource.connect(sender); sender.connect(g0); g0.connect(ctx.destination);
+    sender.onaudioprocess = (e)=>{
+      if(paused || !ws || ws.readyState!==1) return;
+      const f=e.inputBuffer.getChannelData(0);
+      const pcm=new Int16Array(f.length);
+      for(let i=0;i<f.length;i++){ const s=Math.max(-1,Math.min(1,f[i])); pcm[i]=s<0?s*0x8000:s*0x7fff; }
+      ws.send(pcm.buffer);
+    };
+  }
+}
+async function startOpus(){       // opus path: start a fresh opus-recorder (new OGG stream)
+  // Temporarily swap getUserMedia to return our TTS stream — opus-recorder takes its normal path (its own ctx), only the "microphone" is our stream
+  const realGUM = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+  navigator.mediaDevices.getUserMedia = async ()=> opusDest.stream;
+  try{
+    opusRec = new Recorder({
+      encoderPath:'/static/encoderWorker.min.js', encoderSampleRate:24000, encoderFrameSize:20,
+      numberOfChannels:1, encoderComplexity:0, encoderApplication:2049, streamPages:true,
+      maxFramesPerPage:2, recordingGain:1, resampleQuality:3,
+    });
+    opusRec.ondataavailable = (b)=>{ if(!paused && ws && ws.readyState===1) ws.send(b); };
+    await opusRec.start();
+  }catch(e){ $('#state').innerHTML=`<span class="err">opus-recorder failed to start: ${e}</span>`; }
+  finally{ navigator.mediaDevices.getUserMedia = realGUM; }
+}
+function stopOpus(){ try{ if(opusRec){ opusRec.stop(); opusRec=null; } }catch(e){} }
+
+// Play a TTS clip (send into the model + local preview)
+function playClipToModel(audioBuffer){
+  return new Promise(res=>{
+    const src=ctx.createBufferSource(); src.buffer=audioBuffer;
+    src.connect(userSource);                 // → uplink send
+    src.connect(ctx.destination);            // → so you can hear your own TTS locally too
+    src.onended=()=>res();
+    src.start();
+  });
+}
+// Text → normalized AudioBuffer (reuses /api/tts), used by the interruption-test panel
+async function genClip(text){
+  const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({text, voice:$('#ttsVoice').value})});
+  const d=await r.json();
+  if(d.error) throw new Error(d.error);
+  const ab=await (await fetch(d.url)).arrayBuffer();
+  const decoded=await ctx.decodeAudioData(ab.slice(0));
+  const ch=decoded.getChannelData(0); let peak=0;
+  for(let i=0;i<ch.length;i++){ const a=Math.abs(ch[i]); if(a>peak)peak=a; }
+  if(peak>0.01 && peak<0.95){ const g=0.95/peak; for(let i=0;i<ch.length;i++) ch[i]*=g; }
+  return decoded;
+}
+// Send one line into the model (no freeze; stays live after sending so the model can respond / be interrupted)
+async function sendClip(buf, text){
+  if(text) addUserTurn(text);
+  paused=false;
+  if(USES_OPUS(selModel) && !opusRec) await startOpus();
+  try{ if(opusRec && opusRec.audioContext && opusRec.audioContext.state==='suspended') await opusRec.audioContext.resume(); }catch(e){}
+  await playClipToModel(buf);
+}
+
+// —— Batch pre-recorded audio input (drag/pick a batch of wav → send one by one) ——
+let batchBufs=[], decodeCtx=null;   // [{name, buf}]; decodeCtx is independent of the conversation ctx → can decode/prep before the conversation
+function getDecodeCtx(){ if(!decodeCtx) decodeCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:SR}); return decodeCtx; }
+async function addBatchFiles(fileList){
+  const files=[...(fileList||[])].filter(f=>/audio|\.wav$/i.test((f.type||'')+f.name));
+  if(!files.length) return;
+  const dctx=getDecodeCtx();
+  $('#batchState').innerHTML='<span class="dot"></span> Decoding…';
+  const rows=[];
+  for(const f of files){
+    try{
+      const ab=await f.arrayBuffer();
+      const buf=await dctx.decodeAudioData(ab.slice(0));   // decode to 24k (independent ctx, no need to start the conversation first)
+      const i=batchBufs.length; batchBufs.push({name:f.name, buf});
+      rows.push(`<div class="row" style="border-top:1px solid var(--line);padding:6px 0;">`+
+        `<span style="flex:1;font-size:13px;">${esc(f.name)} <span class="mut">${buf.duration.toFixed(1)}s</span></span>`+
+        `<button class="bcListen ghost" data-i="${i}" style="padding:4px 10px;">▶ Preview</button>`+
+        `<button class="bcSend" data-i="${i}" style="padding:4px 12px;">▶ Send</button></div>`);
+    }catch(e){ rows.push(`<div class="row" style="padding:6px 0;"><span class="err">${esc(f.name)}: decode failed</span></div>`); }
+  }
+  $('#batchList').insertAdjacentHTML('beforeend', rows.join(''));
+  $('#batchState').innerHTML=`<span class="ok">✓ +${files.length}</span>`;
+}
+$('#batchFiles').onchange=(ev)=>{ addBatchFiles(ev.target.files); ev.target.value=''; };
+$('#batchDrop').onclick=()=>$('#batchFiles').click();
+$('#batchDrop').ondragover=(e)=>{ e.preventDefault(); $('#batchDrop').style.background='#1a2233'; };
+$('#batchDrop').ondragleave=()=>{ $('#batchDrop').style.background=''; };
+$('#batchDrop').ondrop=(e)=>{ e.preventDefault(); $('#batchDrop').style.background=''; addBatchFiles(e.dataTransfer.files); };
+$('#batchClear').onclick=()=>{ batchBufs=[]; $('#batchList').innerHTML=''; $('#batchState').textContent=''; };
+document.addEventListener('click', async (ev)=>{
+  const send=ev.target.closest && ev.target.closest('.bcSend');
+  const listen=ev.target.closest && ev.target.closest('.bcListen');
+  if(send){
+    const it=batchBufs[+send.getAttribute('data-i')]; if(!it) return;
+    if(!running){ $('#batchState').innerHTML='<span class="err">Click "▶ Start conversation" to connect the model first</span>'; return; }
+    send.disabled=true; const old=send.textContent; send.textContent='Sending…';
+    try{ await sendClip(it.buf, it.name.replace(/\.wav$/i,'')); }catch(e){}
+    finally{ send.disabled=false; send.textContent=old; }
+  } else if(listen){
+    const it=batchBufs[+listen.getAttribute('data-i')]; if(!it||!ctx) return;
+    const s=ctx.createBufferSource(); s.buffer=it.buf; s.connect(ctx.destination); s.start();
+  }
+});
+
+// ---- Pause / resume ----
+function doPause(){                            // Start reply: freeze the model
+  paused=true;
+  // opus: suspend opus-recorder's own AudioContext → the encoder clock freezes and produces no pages → the stream stays fully continuous (no page-sequence gap) and resumes seamlessly
+  try{ if(opusRec && opusRec.audioContext && opusRec.audioContext.state==='running') opusRec.audioContext.suspend(); }catch(e){}
+  $('#state').innerHTML='<span class="dot pause"></span> Model frozen — type to compose your reply';
+  $('#turnState').innerHTML='<span class="warnt">● Model frozen</span>';
+  $('#pauseBtn').disabled=true; $('#reply').disabled=false; $('#genBtn').disabled=false; $('#reply').focus();
+}
+async function doResume(){                     // End reply: send TTS + continue
+  if(!pendingClip){ return; }
+  const txt=window.__clipText||''; if(txt) addUserTurn(txt);   // add this line to the conversation log
+  paused=false;
+  $('#reply').disabled=true; $('#genBtn').disabled=true; $('#sendBtn').disabled=true;
+  $('#state').innerHTML='<span class="dot"></span> Sending your line, model responding…';
+  $('#turnState').innerHTML='<span class="ok">▶ Sent, model running</span>';
+  if(USES_OPUS(selModel) && !opusRec) await startOpus();   // start only the first time: one single opus stream for the whole session (with the OGG header)
+  // opus: resume opus-recorder's AudioContext → the encoder continues seamlessly from the last page (stream continuous, no gap on the server)
+  try{ if(opusRec && opusRec.audioContext && opusRec.audioContext.state==='suspended') await opusRec.audioContext.resume(); }catch(e){}
+  const clip=pendingClip; pendingClip=null;
+  $('#clipAudio').style.display='none';
+  await playClipToModel(clip);                 // finish playing this line (afterward userSource is silent, feeding silence so the model speaks/responds)
+  $('#pauseBtn').disabled=false;               // can "Start reply" again to interrupt/take a turn
+}
+
+// ---- Start / stop conversation ----
+async function start(){
+  if(running) return;
+  selModel=$('#model').value;
+  $('#startBtn').disabled=true; $('#state').innerHTML='<span class="dot"></span> Connecting…';
+  $('#turns').innerHTML=''; $('#rec').style.display='none'; $('#asrOut').innerHTML=''; $('#asrState').textContent='';
+  $('#gradeOut').innerHTML=''; $('#gradeState').textContent=''; lastGrade=null;
+  $('#bcOut').innerHTML=''; $('#bcState').textContent=''; lastBackchannel=null;
+  $('#intGradeOut').innerHTML=''; $('#intGradeState').textContent=''; $('#intState').textContent='';
+  intClip1=null; intClip2=null; intText=''; lastInterruption=null;
+  $('#intSend1').disabled=false; $('#intFreeze').disabled=true; $('#intGenTts').disabled=true;
+  $('#intSendBreak').disabled=true; $('#intInterrupt').disabled=true; $('#intInterrupt').value=''; $('#intFirst').value='';
+  $('#ttGradeOut').innerHTML=''; $('#ttGradeState').textContent=''; lastTurnTaking=null;
+  $('#pauseGradeOut').innerHTML=''; $('#pauseGradeState').textContent=''; $('#pauseState').textContent=''; lastPause=null;
+  $('#pauseGen').disabled=false; $('#pauseSend1').disabled=true; $('#pauseSend2').disabled=true;
+  $('#pauseFirst').value=''; $('#pauseSecond').value=''; pauseClip1=null; pauseClip2=null;
+  $('#ubGradeOut').innerHTML=''; $('#ubGradeState').textContent=''; $('#ubState').textContent=''; lastUB=null;
+  $('#ubGen').disabled=false; $('#ubSendPrompt').disabled=true; $('#ubInject').disabled=true;
+  $('#ubPrompt').value=''; $('#ubPromptSel').value=''; ubPromptClip=null; ubBcClip=null;
+  curModel=null; modelTx=[]; pendingClip=null; lastRec=null; curAudioBubble=null; lastAudioTs=0;
+  // note: don't clear batchBufs — gpt/gemini may have dragged audio in before "Start conversation", keep it
+  ctx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:SR}); await ctx.resume();
+  useWorklet = (USES_OPUS(selModel) && ctx.sampleRate===SR); worklet=null;
+  if(useWorklet){
+    try{ await ctx.audioWorklet.addModule('/static/moshi-processor.js');
+      worklet=new AudioWorkletNode(ctx,'moshi-processor',{outputChannelCount:[1]}); worklet.connect(ctx.destination);
+      worklet.port.postMessage({type:'reset'});
+    }catch(e){ useWorklet=false; worklet=null; console.warn('worklet fallback',e); }
+  }
+  // Build the WS address
+  const proto=location.protocol==='https:'?'wss':'ws';
+  let wsurl=`${proto}://${location.host}/ws/live?model=${selModel}`;
+  const murl=$('#modelUrl').value.trim();
+  if(IS_API(selModel)){
+    const pr=$('#sysPrompt').value.trim(); if(pr) wsurl+=`&prompt=${encodeURIComponent(pr)}`;   // gpt/gemini: API key, no address
+  } else if(selModel==='freezeomni'){
+    wsurl+=`&fo_url=${encodeURIComponent(murl)}`;
+    const pr=$('#sysPrompt').value.trim(); if(pr) wsurl+=`&prompt=${encodeURIComponent(pr)}`;
+  } else {
+    let u=murl;
+    if(selModel==='personaplex'){
+      const q=[]; const vp=$('#voicePrompt').value.trim(); if(vp) q.push('voice_prompt='+encodeURIComponent(vp));
+      const tp=$('#sysPrompt').value.trim()||'You are a friendly assistant.'; q.push('text_prompt='+encodeURIComponent(tp));
+      u+=(u.includes('?')?'&':'?')+q.join('&');
+    }
+    wsurl+=`&moshi_url=${encodeURIComponent(u)}`;
+  }
+  ws=new WebSocket(wsurl); ws.binaryType='arraybuffer';
+  ws.onmessage=(ev)=>{
+    if(typeof ev.data!=='string'){ onModelPcm(ev.data); return; }
+    let d; try{ d=JSON.parse(ev.data); }catch(e){ return; }
+    if(d.type==='ready'){ onReady(); }
+    else if(d.type==='model_text'){ modelTx.push({t:(typeof d.t==='number'?d.t:0),text:d.text}); addModel(d.text); }
+    else if(d.type==='clear'){ clearPlayback(); }
+    else if(d.type==='err'){ $('#state').innerHTML=`<span class="err">${esc(d.text)}</span>`; }
+    else if(d.type==='done'){ finish(d); }
+  };
+  ws.onerror=()=>{ $('#state').innerHTML='<span class="err">Connection error</span>'; };
+  ws.onclose=()=>{ if(running) teardown(); };
+  await buildSender();
+}
+async function onReady(){
+  running=true; $('#stopBtn').disabled=false;
+  $('#mtPanel').style.display=''; $('#intPanel').style.display=''; $('#pausePanel').style.display=''; $('#ubPanel').style.display=''; $('#batchPanel').style.display='';
+  $('#mtInterrupt').disabled=true; $('#mtSendAt').disabled=true;
+  if(IS_API(selModel)){                          // gpt/gemini: server-side VAD, nothing moves until you send → no freeze
+    $('#composer').style.display='none'; paused=false;
+    $('#state').innerHTML='<span class="ok">Connected</span> — pick pre-recorded audio and click "Send" to feed the model (it decides when to respond)';
+  } else {
+    $('#composer').style.display='';
+    doPause();                                   // freeze from the start: waiting for you to compose the first line
+    $('#state').innerHTML='<span class="dot pause"></span> Connected, model frozen — type your first line';
+  }
+}
+$('#pauseBtn').onclick=doPause;
+$('#sendBtn').onclick=doResume;
+
+// ---- Multi-turn test: type→send→(interrupt)→reply, loop. Reuses genClip/sendClip/doPause/doResume ----
+$('#mtSend').onclick=async ()=>{
+  const t=$('#mtText').value.trim(); if(!t) return;
+  if(!running){ $('#mtState').innerHTML='<span class="err">Click "▶ Start conversation" to connect the model first</span>'; return; }
+  $('#mtSend').disabled=true; $('#mtState').innerHTML='<span class="dot"></span> Generating TTS…';
+  try{
+    const buf=await genClip(t); await sendClip(buf, t);   // send it in, no freeze, model responds normally
+    $('#mtText').value=''; $('#mtSendAt').disabled=true;
+    $('#mtInterrupt').disabled = false;                   // any model can be frozen (stop the uplink, buy thinking time)
+    $('#mtState').innerHTML = '<span class="ok">✓ Sent, model responding — to cut in / think of your next line, click "⏸ Freeze time" to stop it</span>';
+  }catch(e){ $('#mtState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#mtSend').disabled=false; }
+};
+$('#mtInterrupt').onclick=()=>{
+  if(!running) return;
+  doPause();                                              // freeze: stop the uplink (opus suspends the encoder / PCM stops sending frames), time stops, recording gets no dead silence. Works for API too
+  $('#mtState').innerHTML='<span class="warnt">● Frozen, time stopped — take your time to think, type, generate, then click "▶ Send and continue"</span>';
+  $('#mtSendAt').disabled=false; $('#mtInterrupt').disabled=true; $('#mtText').focus();
+};
+$('#mtSendAt').onclick=async ()=>{
+  const t=$('#mtText').value.trim(); if(!t){ $('#mtState').innerHTML='<span class="err">Type something first</span>'; return; }
+  $('#mtSendAt').disabled=true; $('#mtState').innerHTML='<span class="dot"></span> Generating TTS…';
+  try{
+    const buf=await genClip(t); pendingClip=buf; window.__clipText=t;
+    await doResume();                                     // unfreeze + send it in from the moment you froze
+    $('#mtText').value=''; $('#mtInterrupt').disabled=false;
+    $('#mtState').innerHTML='<span class="ok">✓ Sent, model continuing/responding — you can "⏸ Freeze time" again or "▶ Send" the next turn</span>';
+  }catch(e){ $('#mtState').innerHTML=`<span class="err">${e}</span>`; $('#mtSendAt').disabled=false; }
+};
+
+// ---- Generate TTS ----
+$('#genBtn').onclick=async ()=>{
+  const text=$('#reply').value.trim(); if(!text) return;
+  $('#genBtn').disabled=true; $('#genState').innerHTML='<span class="dot"></span> MiMo generating…';
+  try{
+    const r=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({text, voice:$('#ttsVoice').value})});
+    const d=await r.json();
+    if(d.error){ $('#genState').innerHTML=`<span class="err">${esc(d.error)}</span>`; $('#genBtn').disabled=false; return; }
+    const ab=await (await fetch(d.url)).arrayBuffer();
+    const decoded=await ctx.decodeAudioData(ab.slice(0));
+    // normalize to peak ~0.95: FreezeOmni's Silero VAD threshold is high (0.8), and TTS is often too quiet/short to pass → boost to near full scale
+    const ch=decoded.getChannelData(0); let peak=0;
+    for(let i=0;i<ch.length;i++){ const a=Math.abs(ch[i]); if(a>peak)peak=a; }
+    if(peak>0.01 && peak<0.95){ const g=0.95/peak; for(let i=0;i<ch.length;i++) ch[i]*=g; }
+    pendingClip=decoded; window.__clipText=text;
+    $('#clipAudio').src=d.url; $('#clipAudio').style.display='';
+    $('#genState').innerHTML=`<span class="ok">✓ ${d.secs}s, preview available. Click "End reply" to send into the model</span>`;
+    $('#sendBtn').disabled=false;
+  }catch(e){ $('#genState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#genBtn').disabled=false; }
+};
+
+function stop(){
+  if(!running) return;
+  $('#state').innerHTML='<span class="dot"></span> Wrapping up, writing recording…';
+  paused=true; if(USES_OPUS(selModel)) stopOpus();
+  try{ if(ws&&ws.readyState===1) ws.send(JSON.stringify({type:'bye'})); }catch(e){}
+}
+function teardown(){
+  running=false;
+  try{ clearPlayback(); }catch(e){}
+  try{ if(opusRec){opusRec.stop();opusRec=null;} }catch(e){}
+  try{ if(worklet){worklet.disconnect();worklet=null;} }catch(e){}
+  try{ ctx&&ctx.close(); }catch(e){} ctx=null;
+  $('#composer').style.display='none'; $('#mtPanel').style.display='none'; $('#intPanel').style.display='none'; $('#pausePanel').style.display='none'; $('#ubPanel').style.display='none';
+  $('#batchPanel').style.display = '';   // all models: keep it after stopping so you can prep the next batch
+  $('#startBtn').disabled=false; $('#stopBtn').disabled=true;
+}
+function finish(d){
+  lastRec=d;
+  const mm=d.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  window.__runDir=`${mm[1]}/${mm[2]}`; window.__sid=`${mm[1]}_${mm[2]}`;
+  $('#recMeta').innerHTML=`<span class="mut">Session <b style="color:var(--fg);user-select:all;">${esc(mm[1]||'?')}</b> · ${esc(mm[2]||'')} · duration ${d.secs}s</span>`;
+  $('#aCombined').src=d.combined_url; $('#aUser').src=d.A_url; $('#aModel').src=d.B_url;
+  $('#rec').style.display=''; $('#state').innerHTML='<span class="ok">✓ Stopped, recording saved</span>';
+  teardown();
+}
+$('#startBtn').onclick=start;
+$('#stopBtn').onclick=stop;
+
+$('#dlAll').onclick=async ()=>{     // package full conversation + separate tracks + parakeet + gold answer + original conversation text into a zip
+  if(!lastRec || !window.__runDir) return;
+  const btn=$('#dlAll'); const old=btn.textContent;
+  btn.disabled=true; btn.textContent='Packaging…(runs parakeet if missing)';
+  try{
+    const payload={dir:window.__runDir};
+    if(genBenchmark) payload.benchmark=genBenchmark;            // include the gold answer if one was generated
+    const dlg=$('#genDlg').value.trim(); if(dlg) payload.dialogue=dlg;   // original conversation text from the input box
+    if(lastGrade) payload.grade=lastGrade;                      // grading result
+    if(lastBackchannel) payload.backchannel=lastBackchannel;    // backchannel test result
+    if(lastInterruption) payload.interruption=lastInterruption; // interruption test result
+    if(lastTurnTaking) payload.turn_taking=lastTurnTaking;      // turn-taking test result
+    if(lastPause) payload.pause=lastPause;                      // pause test result
+    if(lastUB) payload.user_backchannel=lastUB;                 // user-backchannel test result
+    const r=await fetch('/api/download_run',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error(await r.text());
+    const blob=await r.blob(); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`${window.__sid}.zip`;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }catch(e){ alert('Download failed: '+e); }
+  finally{ btn.disabled=false; btn.textContent=old; }
+};
+
+// ---- Post-hoc parakeet (a trimmed-down version of /live's segmentation + interleaving approach) ----
+function groupUtts(words, gap=0.8){
+  const u=[]; let cur=null;
+  for(const w of (words||[])){
+    if(!cur || (w.t0-cur.t1)>gap){ cur={t0:w.t0,t1:w.t1,text:w.word}; u.push(cur); }
+    else { cur.text+=(/^[.,!?'’"]/.test(w.word)?'':' ')+w.word; cur.t1=w.t1; }
+  }
+  return u;
+}
+function renderInterleaved(tr){
+  const uu=groupUtts(tr.user&&tr.user.words).map(x=>({...x,who:'user'}));
+  const mm=groupUtts(tr.model&&tr.model.words).map(x=>({...x,who:'model'}));
+  const all=uu.concat(mm).sort((a,b)=>a.t0-b.t0); if(!all.length) return;
+  $('#turns').innerHTML='';
+  for(const s of all){
+    const el=document.createElement('div'); el.className='turn '+s.who;
+    el.innerHTML=`<div class="who">${s.who==='user'?'You (TTS)':esc(MODEL_LABEL[selModel])} <span class="mut" style="font-weight:400;font-size:10px;">${s.t0.toFixed(1)}s</span></div><div class="txt">${esc(s.text)}</div>`;
+    $('#turns').appendChild(el);
+  }
+}
+$('#asrBtn').onclick=async ()=>{
+  if(!lastRec) return;
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[]; const dir=`${m[1]}/${m[2]}`;
+  $('#asrBtn').disabled=true; $('#asrState').innerHTML='<span class="dot"></span> Local parakeet transcribing…';
+  try{
+    const r=await fetch('/api/parakeet',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dir})});
+    const d=await r.json();
+    if(d.error){ $('#asrState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else {
+      $('#asrState').innerHTML='<span class="ok">✓ Done</span>';
+      const block=(lab,t)=>t?`<div style="margin-top:12px;"><div class="mut">${lab} (${(t.words||[]).length} words)</div><div style="background:#0f1219;border:1px solid var(--line);border-radius:8px;padding:8px 10px;">${esc(t.text||'(none)')}</div></div>`:'';
+      $('#asrOut').innerHTML=block('🅐 Your track (TTS)',d.tracks.user)+block('🅑 Model track',d.tracks.model);
+      renderInterleaved(d.tracks);
+    }
+  }catch(e){ $('#asrState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#asrBtn').disabled=false; }
+};
+
+// —— Inline benchmark (gold answer) generated from a conversation ——
+let genBenchmark=null, lastGrade=null, lastBackchannel=null;   // generated gold answer / grading result / backchannel result
+function jsonDetails(label, obj, open){
+  const json = JSON.stringify(obj, null, 1);
+  return `<details${open?' open':''} style="margin-top:6px;">`+
+    `<summary class="mut" style="cursor:pointer;font-size:12px;">${label} `+
+    `<button class="copyjson" style="background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:6px;padding:1px 8px;font-size:11px;cursor:pointer;margin-left:6px;">📋 Copy</button></summary>`+
+    `<pre style="margin-top:4px;background:#0f1219;border:1px solid var(--line);border-radius:8px;padding:8px 10px;overflow:auto;max-height:380px;font:11px/1.5 ui-monospace,monospace;white-space:pre;">${esc(json)}</pre></details>`;
+}
+document.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest && ev.target.closest('.copyjson');
+  if(!btn) return;
+  ev.preventDefault(); ev.stopPropagation();
+  const pre = btn.closest('details') && btn.closest('details').querySelector('pre');
+  if(!pre) return;
+  try { await navigator.clipboard.writeText(pre.textContent); }
+  catch(_){ const r=document.createRange(); r.selectNodeContents(pre); const s=getSelection();
+            s.removeAllRanges(); s.addRange(r); try{document.execCommand('copy');}catch(e){} s.removeAllRanges(); }
+  const old=btn.textContent; btn.textContent='✓ Copied'; setTimeout(()=>{btn.textContent=old;},1200);
+});
+// —— Generate the gold answer from a conversation ——
+$('#genBenchBtn').onclick=async ()=>{
+  const dialogue=$('#genDlg').value.trim();
+  if(!dialogue){ $('#genBenchState').innerHTML='<span class="err">Paste a conversation first</span>'; return; }
+  $('#genBenchBtn').disabled=true; $('#genBenchOut').innerHTML='';
+  $('#genBenchState').innerHTML='<span class="dot"></span> Generating (LLM labeling the trigger word + correct response)…';
+  try{
+    const r=await fetch('/api/gen_benchmark',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({dialogue, category:$('#genCat').value})});
+    const d=await r.json();
+    if(d.error){ $('#genBenchState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else {
+      genBenchmark=d.benchmark;
+      let extra='';
+      if(d.content_only){ $('#gradeGemini').checked=true; extra=' · content-only question, Gemini auto-checked (judges answer right/wrong)'; }
+      $('#genBenchState').innerHTML=`<span class="ok">✓ Generated, grading will score against it</span><span class="mut">${extra}</span>`;
+      renderGenBench(d);
+    }
+  }catch(e){ $('#genBenchState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#genBenchBtn').disabled=false; }
+};
+// —— Paste a benchmark.json directly to use as the gold answer ——
+$('#pasteBenchBtn').onclick=()=>{
+  const raw=$('#pasteBench').value.trim();
+  if(!raw){ $('#pasteBenchState').innerHTML='<span class="err">Paste a benchmark.json first</span>'; return; }
+  let b; try{ b=JSON.parse(raw); }catch(e){ $('#pasteBenchState').innerHTML=`<span class="err">JSON parse failed: ${esc(e.message||e)}</span>`; return; }
+  const evs=b&&b.expected_events;
+  if(!Array.isArray(evs)||!evs.length){ $('#pasteBenchState').innerHTML='<span class="err">Doesn\'t look like a gold answer: missing expected_events[]</span>'; return; }
+  genBenchmark=b;
+  const e=evs.find(x=>x.graded)||evs[0];
+  const content_only = !e.trigger || e.grade_dimension==='content';
+  if(content_only) $('#gradeGemini').checked=true;
+  $('#pasteBenchState').innerHTML='<span class="ok">✓ Loaded, grading will score against it</span>';
+  renderGenBench({benchmark:b, category:b.category||'', content_only,
+    anchor_word:(e.trigger&&e.trigger.anchor_word)||'', target_response:e.target_response||e.expected_completion||''});
+};
+function renderGenBench(d){
+  const mid = d.content_only
+    ? `judges <b>content right/wrong</b> (no timing)`
+    : `trigger word <code>${esc(d.anchor_word)}</code>`;
+  const summary=`<div style="margin-top:8px;padding:8px 10px;background:#0f1219;border:1px solid var(--line);border-radius:8px;font-size:13px;">`+
+    `category <b>${esc(d.category)}</b> · ${mid} · gold answer <b>${esc(d.target_response)}</b>`+`</div>`;
+  $('#genBenchOut').innerHTML=summary+
+    jsonDetails('benchmark.json (gold answer)', d.benchmark, false);
+}
+// —— Grading: this TTS conversation's recording vs the gold answer ——
+const GM = {pass:'✅', fail:'❌', early:'❌early', late:'❌late', uncertain:'❓', 'n/a':'—'};
+$('#gradeBtn').onclick=async ()=>{
+  if(!genBenchmark){ $('#gradeState').innerHTML='<span class="err">Generate one first with "🛠 Generate gold answer from a conversation" above</span>'; return; }
+  if(!lastRec){ $('#gradeState').innerHTML='<span class="err">Have a conversation first (need a recording to grade)</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  const run_dir=`${m[1]}/${m[2]}`;
+  $('#gradeBtn').disabled=true; $('#gradeOut').innerHTML=''; $('#gradeState').innerHTML='<span class="dot"></span> Grading…';
+  try{
+    const payload={run_dir, variant:'A', gemini:$('#gradeGemini').checked, benchmark:genBenchmark};
+    const r=await fetch('/api/grade_live',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.error){ $('#gradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#gradeState').innerHTML='<span class="ok">✓</span>'; lastGrade=d; renderGrade(d); }
+  }catch(e){ $('#gradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#gradeBtn').disabled=false; }
+};
+function gradeEvRow(r){
+  if(!('timing' in r) && !('content' in r))
+    return `<div style="border-top:1px solid var(--line);padding:8px 0;"><span class="err">⚠️ ${esc(r.event||'?')} — ${esc(r.status||'')}</span>${r.note?` <span class="mut">${esc(r.note)}</span>`:''}</div>`;
+  const mark=r.status==='pass'?'✅':'❌';
+  let dims;
+  if('timing' in r && 'latency_ms' in r.timing){
+    dims=`①${GM[r.timing.status]||r.timing.status} ②${GM[(r.overlap||{}).status]||'—'} ③${GM[(r.content||{}).status]||'—'}`
+        +(('silence' in r)?` ④${GM[r.silence.status]||r.silence.status}`:'')
+        +` · <span class="mut">${r.timing.latency_ms}ms (window ${r.window_ms?r.window_ms.join('~'):'—'})</span>`;
+  } else if('timing' in r){ dims=`<span class="err">${esc(r.timing.status)}</span>`; }
+  else { dims=`③${GM[(r.content||{}).status]||'—'} · <span class="mut">content event</span>`; }
+  return `<div style="border-top:1px solid var(--line);padding:8px 0;"><div>${mark} <b>${esc(r.event)}</b> <span class="mut">[${esc(r.category||'')}/${esc(r.action||'')}]</span> · ${dims}</div>`+
+    jsonDetails('four-dimension detail', r, false)+`</div>`;
+}
+function renderGrade(d){
+  const s=d.summary||{};
+  let html=`<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:20px;font-weight:700;">${((s.rate||0)*100).toFixed(0)}% <span class="mut" style="font-size:13px;font-weight:400;">events PASS ${s.npass||0}/${s.n||0} · ${esc(d.category||'')} · variant ${esc(d.variant||'')}</span></div>`;
+  if(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    html+=`<div class="mut"><span class="err">⚠️ Gemini checked but no key found → content uses ASR only</span></div>`;
+  html+=`</div>`+(d.events||[]).map(gradeEvRow).join('')+jsonDetails('grading result JSON', d, false);
+  $('#gradeOut').innerHTML=html;
+}
+
+// —— Backchannel (acknowledgment) test (no gold answer, analyzes the model-track behavior) ——
+$('#bcBtn').onclick=async ()=>{
+  if(!lastRec){ $('#bcState').innerHTML='<span class="err">Say something first, need a recording to test</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  const run_dir=`${m[1]}/${m[2]}`;
+  $('#bcBtn').disabled=true; $('#bcOut').innerHTML=''; $('#bcState').innerHTML='<span class="dot"></span> Analyzing the model track…';
+  try{
+    const r=await fetch('/api/grade_backchannel',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({run_dir, gemini:$('#bcGemini').checked})});
+    const d=await r.json();
+    if(d.error){ $('#bcState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#bcState').innerHTML='<span class="ok">✓</span>'; lastBackchannel=d; renderBackchannel(d); }
+  }catch(e){ $('#bcState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#bcBtn').disabled=false; }
+};
+const BC_ICON={backchannel:'🟢 backchannel', attempt:'🟠 wants floor (not backchannel)', floor_take:'🔴 grabbed the turn',
+               response:'💬 dialogue reply (after user finished)', noise:'⚪ noise/no content'};
+function renderBackchannel(d){
+  const natt=d.n_attempt||0, nresp=d.n_response||0;
+  const verdict = d.tor===1 ? '❌ Grabbed the turn (said a full sentence while the user was still talking)'
+                : natt>0 ? '⚠️ Had wants-floor / non-backchannel short sounds — not a true backchannel'
+                : d.n_backchannel>0 ? '✅ Backchannels and didn\'t grab the floor'
+                : '⚠️ No backchannel at all';
+  const rows=(d.segments||[]).map(s=>{
+    const heard = s.heard ? ` · <span class="mut">Gemini heard "${esc(s.heard)}"${s.reason?' · '+esc(s.reason):''}</span>` : '';
+    return `<div style="border-top:1px solid var(--line);padding:6px 0;font-size:13px;">`+
+      `${BC_ICON[s.kind]||s.kind} <span class="mut">${s.start}~${s.end}s · ${s.dur}s</span> · "${esc(s.words||'(non-verbal/no content)')}"${heard}</div>`;
+  }).join('');
+  const gwarn=(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    ? `<div class="mut"><span class="err">⚠️ Gemini checked but no key found → short sounds judged by duration/word-count only (may mistake "wants floor" for a backchannel)</span></div>` : '';
+  $('#bcOut').innerHTML=
+    `<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:16px;font-weight:700;">${verdict}</div>`+gwarn+
+    `<div class="mut" style="margin-top:6px;">true backchannels <b style="color:var(--fg)">${d.n_backchannel}</b> · `+
+    `wants floor <b style="color:var(--fg)">${natt}</b> · dialogue replies <b style="color:var(--fg)">${nresp}</b> · `+
+    `TOR <b style="color:var(--fg)">${d.tor}</b> (0=didn't grab, good) · rate ${d.freq_per_s==null?'—':d.freq_per_s+'/s'} · `+
+    `you talked ${d.user_secs==null?'?':d.user_secs}s · model total ${d.n_segments} segments</div>`+
+    `<div class="mut" style="margin-top:2px;font-size:11px;">💬 dialogue reply = spoke only after the user finished (normal turn-taking, not a backchannel) · ⚪ noise = no recognized content</div></div>`+
+    (rows?`<div style="margin-top:8px;">${rows}</div>`:'')+jsonDetails('backchannel JSON', d, false);
+}
+
+// —— Interruption test: user interrupts the model (freeze→compose calmly→unfreeze and lay over, aligned with v1 user_interruption) ——
+let intClip1=null, intClip2=null, intText='', lastInterruption=null;
+$('#intSend1').onclick=async ()=>{           // ① generate the first line and send it in (no freeze, model starts talking)
+  const t1=$('#intFirst').value.trim();
+  if(!t1){ $('#intState').innerHTML='<span class="err">Fill in the first line</span>'; return; }
+  $('#intSend1').disabled=true; $('#intState').innerHTML='<span class="dot"></span> Synthesizing and sending the first line…';
+  try{
+    intClip1=await genClip(t1);
+    await sendClip(intClip1, t1);
+    $('#intState').innerHTML='<span class="ok">▶ Model responding — when it\'s halfway through, click "🚹 Interrupt" to freeze it</span>';
+    $('#intFreeze').disabled=false;
+  }catch(e){ $('#intState').innerHTML=`<span class="err">${e}</span>`; $('#intSend1').disabled=false; }
+};
+$('#intFreeze').onclick=()=>{                 // ② freeze the talking model, giving you time to compose the interrupting line
+  paused=true;
+  try{ if(opusRec && opusRec.audioContext && opusRec.audioContext.state==='running') opusRec.audioContext.suspend(); }catch(e){}
+  $('#intFreeze').disabled=true; $('#intInterrupt').disabled=false; $('#intGenTts').disabled=false; $('#intInterrupt').focus();
+  $('#intState').innerHTML='<span class="dot pause"></span> Model frozen — calmly type the interrupting line and generate TTS';
+};
+$('#intGenTts').onclick=async ()=>{           // ③ synthesize the interrupting line
+  const t2=$('#intInterrupt').value.trim();
+  if(!t2){ $('#intState').innerHTML='<span class="err">Type the interrupting line first</span>'; return; }
+  $('#intGenTts').disabled=true; $('#intState').innerHTML='<span class="dot"></span> Synthesizing the interrupting line…';
+  try{ intClip2=await genClip(t2); intText=t2;
+    $('#intState').innerHTML='<span class="ok">✓ Interrupting line ready, click "Send interruption" to unfreeze and lay it over</span>'; $('#intSendBreak').disabled=false;
+  }catch(e){ $('#intState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#intGenTts').disabled=false; }
+};
+$('#intSendBreak').onclick=async ()=>{        // ④ unfreeze + lay the interrupting line over the model's resuming output = a real interruption
+  if(!intClip2){ $('#intState').innerHTML='<span class="err">Generate the interrupting line first</span>'; return; }
+  $('#intSendBreak').disabled=true;
+  try{
+    paused=false;
+    if(USES_OPUS(selModel) && !opusRec) await startOpus();
+    try{ if(opusRec && opusRec.audioContext && opusRec.audioContext.state==='suspended') await opusRec.audioContext.resume(); }catch(e){}
+    addUserTurn('(interrupt) '+intText);
+    $('#intState').innerHTML='<span class="ok">✓ Interrupted! See whether the model stops and whether it takes up your line. Stop→run parakeet→grade interruption</span>';
+    await playClipToModel(intClip2);          // after unfreezing the model keeps talking, and the interrupting audio lays over it → overlap
+  }catch(e){ $('#intState').innerHTML=`<span class="err">${e}</span>`; $('#intSendBreak').disabled=false; }
+};
+// —— Grade interruption ——
+$('#intBtn').onclick=async ()=>{
+  if(!lastRec){ $('#intGradeState').innerHTML='<span class="err">Do an interruption test first, need a recording to grade</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[];
+  const run_dir=`${m[1]}/${m[2]}`;
+  $('#intBtn').disabled=true; $('#intGradeOut').innerHTML=''; $('#intGradeState').innerHTML='<span class="dot"></span> Analyzing…';
+  try{
+    const r=await fetch('/api/grade_interruption',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({run_dir, interrupt_text:intText, gemini:$('#intGemini').checked})});
+    const d=await r.json();
+    if(d.error){ $('#intGradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#intGradeState').innerHTML='<span class="ok">✓</span>'; lastInterruption=d; renderInterruption(d); }
+  }catch(e){ $('#intGradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#intBtn').disabled=false; }
+};
+function renderInterruption(d){
+  const rel=(d.relevance||{}).addressed;
+  const verdict = !d.tor ? '❌ Didn\'t take a turn after being interrupted (didn\'t stop / didn\'t respond)'
+                : rel==='no' ? '⚠️ Took a turn but didn\'t address the interruption (still on the old topic)'
+                : rel==='partial' ? '🟡 Partially addressed the interruption'
+                : rel==='yes' ? '✅ Stopped and addressed the interruption'
+                : '✅ Took a new turn (content judgment unavailable)';
+  const relLine = d.relevance ? ` · relevance <b style="color:var(--fg)">${esc((d.relevance||{}).addressed||'')}</b>`
+    +(d.relevance.reason?` <span class="mut">· ${esc(d.relevance.reason)}</span>`:'') : '';
+  const gwarn=(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    ? `<div class="mut"><span class="err">⚠️ Gemini checked but no key found → only reports TOR/latency, no relevance</span></div>` : '';
+  $('#intGradeOut').innerHTML=
+    `<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:16px;font-weight:700;">${verdict}</div>`+gwarn+
+    `<div class="mut" style="margin-top:6px;">model was talking at interrupt <b style="color:var(--fg)">${d.was_talking?'yes':'no'}</b> · `+
+    `takeover TOR <b style="color:var(--fg)">${d.tor}</b> · latency ${d.latency_ms==null?'—':d.latency_ms+'ms'}${relLine}</div>`+
+    `<div class="mut" style="margin-top:4px;font-size:12px;">interruption content "${esc(d.interrupt_text||'')}" · model after interruption "${esc(d.heard_after||'')}"</div></div>`+
+    jsonDetails('interruption grading JSON', d, false);
+}
+
+// —— Pause test: both clips are TTS-synthesized first → send first half → wait → send second half (instant, no freeze; the pause = the time you wait) ——
+let lastTurnTaking=null, lastPause=null, pauseClip1=null, pauseClip2=null;
+$('#pauseGen').onclick=async ()=>{
+  const t1=$('#pauseFirst').value.trim(), t2=$('#pauseSecond').value.trim();
+  if(!t1||!t2){ $('#pauseState').innerHTML='<span class="err">Both halves are required</span>'; return; }
+  $('#pauseGen').disabled=true; $('#pauseState').innerHTML='<span class="dot"></span> Synthesizing both…';
+  try{
+    pauseClip1=await genClip(t1); pauseClip2=await genClip(t2);
+    $('#pauseState').innerHTML='<span class="ok">✓ Both ready, click "Send first half"</span>'; $('#pauseSend1').disabled=false;
+  }catch(e){ $('#pauseState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#pauseGen').disabled=false; }
+};
+$('#pauseSend1').onclick=async ()=>{
+  if(!pauseClip1) return;
+  $('#pauseSend1').disabled=true;
+  await sendClip(pauseClip1, $('#pauseFirst').value.trim());   // instant (already synthesized)
+  $('#pauseState').innerHTML='<span class="ok">▶ First half sent — deliberately wait 2-3 sec (see if the model jumps in), then send the second half</span>';
+  $('#pauseSend2').disabled=false;
+};
+$('#pauseSend2').onclick=async ()=>{
+  if(!pauseClip2) return;
+  $('#pauseSend2').disabled=true;
+  await sendClip(pauseClip2, $('#pauseSecond').value.trim());  // instant
+  $('#pauseState').innerHTML='<span class="ok">✓ Both sent. Stop→run parakeet→grade pause</span>';
+};
+// —— Grade turn-taking (smooth-turn) ——
+$('#ttGradeBtn').onclick=async ()=>{
+  if(!lastRec){ $('#ttGradeState').innerHTML='<span class="err">Say a sentence for the model to reply to first, need a recording to grade</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[]; const run_dir=`${m[1]}/${m[2]}`;
+  $('#ttGradeBtn').disabled=true; $('#ttGradeOut').innerHTML=''; $('#ttGradeState').innerHTML='<span class="dot"></span> Analyzing…';
+  try{
+    const r=await fetch('/api/grade_turn_taking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({run_dir})});
+    const d=await r.json();
+    if(d.error){ $('#ttGradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#ttGradeState').innerHTML='<span class="ok">✓</span>'; lastTurnTaking=d; renderTurnTaking(d); }
+  }catch(e){ $('#ttGradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#ttGradeBtn').disabled=false; }
+};
+function renderTurnTaking(d){
+  const lat=d.latency_ms;
+  const verdict = !d.tor ? '❌ Model didn\'t reply after the user finished'
+                : (lat!=null && lat>1500) ? `🟡 Replied but slow (${lat}ms)`
+                : `✅ Replied promptly (${lat==null?'—':lat+'ms'})`;
+  $('#ttGradeOut').innerHTML=
+    `<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:16px;font-weight:700;">${verdict}</div>`+
+    `<div class="mut" style="margin-top:6px;">takeover TOR <b style="color:var(--fg)">${d.tor}</b> · latency ${lat==null?'—':lat+'ms'} · you finished ${d.turn_end}s</div>`+
+    `<div class="mut" style="margin-top:4px;font-size:12px;">model reply "${esc(d.heard_after||'')}"</div></div>`+
+    jsonDetails('turn-taking grading JSON', d, false);
+}
+// —— Grade pause (pause handling) ——
+$('#pauseGradeBtn').onclick=async ()=>{
+  if(!lastRec){ $('#pauseGradeState').innerHTML='<span class="err">Do a pause test first, need a recording to grade</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[]; const run_dir=`${m[1]}/${m[2]}`;
+  $('#pauseGradeBtn').disabled=true; $('#pauseGradeOut').innerHTML=''; $('#pauseGradeState').innerHTML='<span class="dot"></span> Analyzing…';
+  try{
+    const r=await fetch('/api/grade_pause',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({run_dir, gemini:$('#pauseGemini').checked})});
+    const d=await r.json();
+    if(d.error){ $('#pauseGradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#pauseGradeState').innerHTML='<span class="ok">✓</span>'; lastPause=d; renderPause(d); }
+  }catch(e){ $('#pauseGradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#pauseGradeBtn').disabled=false; }
+};
+function renderPause(d){
+  const j=d.judged;
+  let verdict;
+  if(d.tor) verdict = j ? '❌ Took over the turn during the pause (not a continuer, this was grabbing the floor)' : '❌ Grabbed the floor during the pause (treated the pause as done and took over)';
+  else if(j && d.jumped_in) verdict = '✅ Made a sound during the pause, but a supportive continuer (didn\'t grab the floor, left it to you)';
+  else if(d.jumped_in) verdict = '🟡 Made a bit of sound during the pause (brief, maybe just a backchannel)';
+  else verdict = '✅ Held back (recognized you weren\'t done yet)';
+  const jline = j ? ` · <span class="mut">Gemini: ${j.took_floor?'took over':'continuer'}${j.reason?' · '+esc(j.reason):''}</span>` : '';
+  const gwarn=(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    ? `<div class="mut"><span class="err">⚠️ Gemini checked but no key found → fell back to the word-count threshold</span></div>` : '';
+  $('#pauseGradeOut').innerHTML=
+    `<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:16px;font-weight:700;">${verdict}</div>`+gwarn+
+    `<div class="mut" style="margin-top:6px;">pause window ${d.pause_window?d.pause_window.join('~'):'—'}s (${d.pause_dur}s) · made sound in pause <b style="color:var(--fg)">${d.jumped_in?'yes':'no'}</b> · TOR <b style="color:var(--fg)">${d.tor}</b> (0=didn't grab, good)${jline}</div>`+
+    (d.heard_in_pause?`<div class="mut" style="margin-top:4px;font-size:12px;">during the pause the model said "${esc(d.heard_in_pause)}"</div>`:'')+`</div>`+
+    jsonDetails('pause grading JSON', d, false);
+}
+
+// —— User backchannel test: synthesize the prompt line first → send → drop in acknowledgments while the model talks (instant, no freeze) ——
+let ubPromptClip=null, ubBcClip=null, lastUB=null;
+$('#ubPromptSel').onchange=e=>{ if(e.target.value) $('#ubPrompt').value=e.target.value; };  // pick from the dropdown → fill in (still editable)
+$('#ubGen').onclick=async ()=>{
+  const p=$('#ubPrompt').value.trim(), w=$('#ubWord').value.trim()||'mhm';
+  if(!p){ $('#ubState').innerHTML='<span class="err">Fill in the prompt line first</span>'; return; }
+  $('#ubGen').disabled=true; $('#ubState').innerHTML='<span class="dot"></span> Synthesizing prompt line + acknowledgment…';
+  try{
+    ubPromptClip=await genClip(p); ubBcClip=await genClip(w);
+    $('#ubState').innerHTML='<span class="ok">✓ Ready, click "Send prompt line"</span>'; $('#ubSendPrompt').disabled=false;
+  }catch(e){ $('#ubState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#ubGen').disabled=false; }
+};
+$('#ubSendPrompt').onclick=async ()=>{
+  if(!ubPromptClip) return;
+  $('#ubSendPrompt').disabled=true;
+  await sendClip(ubPromptClip, $('#ubPrompt').value.trim());
+  $('#ubState').innerHTML='<span class="ok">▶ Prompt line sent — wait for the model to start, then click "Drop in acknowledgment" while it talks (multiple ok)</span>';
+  $('#ubInject').disabled=false;
+};
+$('#ubInject').onclick=async ()=>{                              // can click repeatedly, one acknowledgment per click
+  if(!ubBcClip) return;
+  await sendClip(ubBcClip, $('#ubWord').value.trim()||'mhm');
+  $('#ubState').innerHTML='<span class="ok">▶ Dropped in one acknowledgment — the model should keep going; click again if you like</span>';
+};
+$('#ubGradeBtn').onclick=async ()=>{
+  if(!lastRec){ $('#ubGradeState').innerHTML='<span class="err">Do a backchannel test first, need a recording to grade</span>'; return; }
+  const m=lastRec.combined_url.match(/runs\/([^/]+)\/([^/]+)\//)||[]; const run_dir=`${m[1]}/${m[2]}`;
+  $('#ubGradeBtn').disabled=true; $('#ubGradeOut').innerHTML=''; $('#ubGradeState').innerHTML='<span class="dot"></span> Analyzing…';
+  try{
+    const r=await fetch('/api/grade_user_backchannel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({run_dir, gemini:$('#ubGemini').checked})});
+    const d=await r.json();
+    if(d.error){ $('#ubGradeState').innerHTML=`<span class="err">${esc(d.error)}</span>`; }
+    else { $('#ubGradeState').innerHTML='<span class="ok">✓</span>'; lastUB=d; renderUB(d); }
+  }catch(e){ $('#ubGradeState').innerHTML=`<span class="err">${e}</span>`; }
+  finally{ $('#ubGradeBtn').disabled=false; }
+};
+function renderUB(d){
+  const tag={C_RESUME:'kept going (held its ground)',C_RESPOND:'treated the acknowledgment as a turn and engaged',C_UNCERTAIN:'got confused (asked "what did you say?")',C_UNKNOWN:'lost the thread / drifted off'}[d.behaviour]||d.behaviour;
+  const verdict = d.derailed ? `❌ Derailed by the acknowledgment — ${d.behaviour} (${tag})` : `✅ Not derailed, kept going — ${d.behaviour}`;
+  const gwarn=(d.gemini && d.gemini.asked && !d.gemini.key_found)
+    ? `<div class="mut"><span class="err">⚠️ Gemini checked but no key found → fell back to the timing-based judgment</span></div>` : '';
+  $('#ubGradeOut').innerHTML=
+    `<div style="margin-top:12px;padding:12px;background:#0f1219;border:1px solid var(--line);border-radius:8px;">`+
+    `<div style="font-size:16px;font-weight:700;">${verdict}</div>`+gwarn+
+    `<div class="mut" style="margin-top:6px;">acknowledgments <b style="color:var(--fg)">${d.n_backchannel}</b> (@${(d.bc_times||[]).join(', ')}s) · ${d.looks_truncated?'answer <b style="color:#e88">cut off mid-sentence</b>':(d.continued_after_last_bc?'after the last one the model <b style="color:var(--fg)">kept talking</b>':'after the last one the model <b style="color:#e88">stopped</b>')} · answer duration ${d.reply_dur}s</div>`+
+    (d.reason?`<div class="mut" style="margin-top:4px;font-size:12px;">rationale: ${esc(d.reason)}</div>`:'')+
+    (d.reply_text?`<div class="mut" style="margin-top:4px;font-size:12px;">model answer "${esc(d.reply_text)}"</div>`:'')+`</div>`+
+    jsonDetails('backchannel grading JSON', d, false);
+}
+</script>
+</body>
+</html>

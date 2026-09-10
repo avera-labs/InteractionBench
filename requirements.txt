@@ -1,0 +1,28 @@
+# InteractionBench — pip fallback (uv is the primary path: `uv sync`, see pyproject.toml)
+#
+# Offline grader core + LLM benchmark generator + dashboard:
+python-dotenv
+pydub                 # needs system ffmpeg
+audioop-lts ; python_version >= "3.13"   # pydub uses stdlib `audioop`, removed in py3.13 (PEP 594)
+numpy
+scipy
+soundfile
+webrtcvad             # VAD boundaries (vad_utils)
+setuptools<82         # webrtcvad imports pkg_resources; setuptools 82+ dropped it
+google-genai          # Gemini content judge (content_judge), only when gemini=True
+aiohttp               # dashboard server
+requests              # MiMo gateway transport (mimo_gateway, used by gen_benchmark)
+
+# Optional: live model relays in the dashboard (lazy-imported per model). With uv: uv sync --extra dashboard
+# openai            # GPT realtime
+# sphn              # Moshi / PersonaPlex opus codec
+# python-socketio   # FreezeOmni
+
+# Optional: local word-level ASR (parakeet_local) — Apple Silicon only, NOT needed by the
+# grader itself (feed it any ASR emitting {"word","t0","t1"}). With uv:  uv sync --extra asr
+# parakeet-mlx ; sys_platform == "darwin" and platform_machine == "arm64"
+# numba>=0.61  ; sys_platform == "darwin" and platform_machine == "arm64"
+# llvmlite>=0.44 ; sys_platform == "darwin" and platform_machine == "arm64"
+
+# NOTE: the dashboard's live TTS synthesis needs MIMO_PROXY_API_KEY (.env) + sg_api_lanes.json
+# (MiMo TTS token lanes) in the v4/ folder. It no longer needs S3 / Supabase — see README.

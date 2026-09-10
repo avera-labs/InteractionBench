@@ -1,0 +1,80 @@
+[
+  {
+    "i": 0,
+    "speaker": "A",
+    "start": 0.0,
+    "dur": 11.57,
+    "rule": "start",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Be honest with me for a second, I want to try something. Whenever I sa"
+  },
+  {
+    "i": 1,
+    "speaker": "B",
+    "start": 11.87,
+    "dur": 6.18,
+    "rule": "gap=0.3",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Got it."
+  },
+  {
+    "i": 2,
+    "speaker": "A",
+    "start": 18.45,
+    "dur": 5.569,
+    "rule": "gap=0.4",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Okay so I left my coffee on the desk for like twenty minutes, right?"
+  },
+  {
+    "i": 3,
+    "speaker": "B",
+    "start": 24.319,
+    "dur": 0.58,
+    "rule": "gap=0.3",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Mmhm."
+  },
+  {
+    "i": 4,
+    "speaker": "A",
+    "start": 25.199,
+    "dur": 2.649,
+    "rule": "gap=0.3",
+    "cut_by": 5,
+    "dropped_word": "my",
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "And not to be dramatic but I think my whole morning is basically ruine"
+  },
+  {
+    "i": 5,
+    "speaker": "B",
+    "start": 27.449,
+    "dur": 5.14,
+    "rule": "anchor 'dramatic'@equal(high) → +2.25s into ut4",
+    "cut_by": null,
+    "dropped_word": null,
+    "resumed_from": null,
+    "bc": false,
+    "bc_gain": null,
+    "text": "Being dramatic."
+  }
+]

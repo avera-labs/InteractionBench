@@ -1,0 +1,38 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "0f0d2f6c-3a97-55a2-a080-955ba6e28b0e",
+  "variant": "A",
+  "prompt_version": 2,
+  "category": "countdown_completion",
+  "declared_trigger_anchor": "One",
+  "card_target": "Happy New Year!",
+  "floor_control_action_space": [
+    "WAIT",
+    "BACKCHANNEL",
+    "TAKE_FLOOR",
+    "INTERRUPT",
+    "CONTINUE",
+    "YIELD",
+    "RESUME",
+    "ABORT"
+  ],
+  "n_graded_events": 1,
+  "expected_events": [
+    {
+      "event_id": "e1",
+      "graded": true,
+      "grade_dimension": "content",
+      "expected_action": "SELF_COMPLETE",
+      "onset_window_ms": null,
+      "onset_reference": null,
+      "expected_overlap": null,
+      "trigger": null,
+      "target_response": "Happy New Year!",
+      "generated_text": "Happy New Year!",
+      "response_line_index": 8,
+      "expected_completion": "Happy New Year!",
+      "expected_precount": "descending_to_one"
+    }
+  ],
+  "note": "Ground truth from CARD (Target AI response + arithmetic for numbers), NOT the generated line (kept as generated_text). grade_dimension: timing = onset vs trigger; content = correct produced content (sequence / next value / completion)."
+}

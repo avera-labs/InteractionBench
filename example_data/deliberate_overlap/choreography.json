@@ -1,0 +1,87 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "08345d15-b647-5384-b203-8f8f48850794",
+  "variant": "A",
+  "prompt_version": 2,
+  "repairs": {},
+  "lines": [
+    {
+      "speaker": "A",
+      "text": "Be honest with me for a second, I want to try something. Whenever I say 'not to be dramatic', cut me off right there and say 'Being dramatic.' Don't wait for me to finish.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "B",
+      "text": "Got it.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "Okay so I left my coffee on the desk for like twenty minutes, right?",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.4
+    },
+    {
+      "speaker": "B",
+      "text": "Mmhm.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "And not to be dramatic but I think my whole morning is basically ruined because of it.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "B",
+      "text": "Being dramatic.",
+      "anchor": "dramatic",
+      "nth": null,
+      "ref": -1,
+      "ov": 0.25,
+      "cut": true,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    }
+  ]
+}

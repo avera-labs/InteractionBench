@@ -1,0 +1,90 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "154df347-d491-5b21-bd39-0d995d3c4666",
+  "variant": "A",
+  "prompt_version": 2,
+  "repairs": {
+    "dash_stripped": 1,
+    "correction_interrupt_reconstructed": 1
+  },
+  "lines": [
+    {
+      "speaker": "A",
+      "text": "This morning the train was so late, I was standing on the platform for like twenty minutes. I wanted to practice my English though, can you correct me if I make a mistake? Just jump in right away, don't wait.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "B",
+      "text": "Sure, go ahead.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.6
+    },
+    {
+      "speaker": "A",
+      "text": "So there's this woman at work, she's really nice, and she married with him last year so now they both take the same train every morning.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.5
+    },
+    {
+      "speaker": "B",
+      "text": "She married him.",
+      "anchor": "with",
+      "nth": null,
+      "ref": -1,
+      "ov": 0.52,
+      "cut": true,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "A",
+      "text": "Oh right, she married him. Thanks.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.4
+    },
+    {
+      "speaker": "B",
+      "text": "Nice, keep going.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    }
+  ]
+}

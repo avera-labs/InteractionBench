@@ -1,0 +1,86 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "0f0d2f6c-3a97-55a2-a080-955ba6e28b0e",
+  "variant": "A",
+  "prompt_version": 2,
+  "dialogue_model": "mimo-v2.5-pro",
+  "tts_mode": "designclone",
+  "tts_model": "mimo-v2.5-tts-voiceclone",
+  "voice_0": "Priya",
+  "voice_1": null,
+  "backend": "dc-sg",
+  "utterances": [
+    {
+      "speaker": "0",
+      "text": "Hey, count me down to midnight, five, four, three, two, one, and right when you hit one, shout happy new year. Ready?",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Ready.",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "0",
+      "text": "Okay, go!",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Five…",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Four…",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Three…",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Two…",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "One!",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    },
+    {
+      "speaker": "1",
+      "text": "Happy New Year!",
+      "overlap_percentage": null,
+      "relative_start": null,
+      "start_time": 0.0,
+      "duration": 0.0
+    }
+  ]
+}

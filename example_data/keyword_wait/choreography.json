@@ -1,0 +1,141 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "02ab166d-07e5-5f06-bd32-7256a99382ae",
+  "variant": "A",
+  "prompt_version": 2,
+  "repairs": {
+    "dash_stripped": 1
+  },
+  "lines": [
+    {
+      "speaker": "A",
+      "text": "I need you to talk me out of something. Let's just chat, but here's a little game, the moment I say the word 'cello', jump in and call it out right then. Don't wait for me to finish.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "B",
+      "text": "Sure, I can do that.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "Okay so I left my coffee on the desk this morning and now it's completely cold. I keep doing this.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.4
+    },
+    {
+      "speaker": "B",
+      "text": "Yeah, that's annoying. How long was it sitting there?",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "Maybe two hours. I was focused on some work, trying to learn guitar actually, and just forgot about it.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "B",
+      "text": "Guitar, nice. What are you learning?",
+      "anchor": "guitar",
+      "nth": null,
+      "ref": -1,
+      "ov": 0.67,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    },
+    {
+      "speaker": "A",
+      "text": "Just some basic chords. My neighbour plays drums and he's been showing me stuff too, but guitar feels more my speed.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "B",
+      "text": "That's a good way to learn, having someone nearby who plays.",
+      "anchor": null,
+      "nth": null,
+      "ref": -1,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "A",
+      "text": "Right. I also tried piano once but gave up. Anyway, this morning I was sitting there with my cold coffee thinking, I should really get a thermos. And then I heard my neighbour playing cello through the wall and it was actually kind of beautiful.",
+      "anchor": null,
+      "nth": null,
+      "ref": null,
+      "ov": null,
+      "cut": false,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": 0.3
+    },
+    {
+      "speaker": "B",
+      "text": "Cello heard.",
+      "anchor": "cello",
+      "nth": null,
+      "ref": -1,
+      "ov": 0.77,
+      "cut": true,
+      "resume": false,
+      "flow": false,
+      "bc": false,
+      "gap": null
+    }
+  ]
+}

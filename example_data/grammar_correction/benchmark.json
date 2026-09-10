@@ -1,0 +1,43 @@
+{
+  "prompt_key": "interaction benchmark data",
+  "scenario_id": "154df347-d491-5b21-bd39-0d995d3c4666",
+  "variant": "A",
+  "prompt_version": 2,
+  "category": "grammar_correction",
+  "declared_trigger_anchor": "with",
+  "card_target": "She married him.",
+  "floor_control_action_space": [
+    "WAIT",
+    "BACKCHANNEL",
+    "TAKE_FLOOR",
+    "INTERRUPT",
+    "CONTINUE",
+    "YIELD",
+    "RESUME",
+    "ABORT"
+  ],
+  "n_graded_events": 1,
+  "expected_events": [
+    {
+      "event_id": "e1",
+      "graded": true,
+      "grade_dimension": "timing",
+      "expected_action": "INTERRUPT",
+      "onset_window_ms": [
+        50,
+        300
+      ],
+      "onset_reference": "trigger_word_end",
+      "expected_overlap": "required",
+      "trigger": {
+        "type": "exact_word",
+        "anchor_word": "with",
+        "ov_reported": 0.52
+      },
+      "target_response": "She married him.",
+      "generated_text": "She married him.",
+      "response_line_index": 3
+    }
+  ],
+  "note": "Ground truth from CARD (Target AI response + arithmetic for numbers), NOT the generated line (kept as generated_text). grade_dimension: timing = onset vs trigger; content = correct produced content (sequence / next value / completion)."
+}
