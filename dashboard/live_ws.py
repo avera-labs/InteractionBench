@@ -159,6 +159,183 @@ async def relay_gpt(ws, silence_ms: int, out_dir: Path, model: str = "gpt-realti
     return _write_tracks(bytes(user["pcm"]), model_blocks, out_dir)
 
 
+GPT_LIVE_URL = "wss://api.openai.com/v1/live/sessions"
+GPT_LIVE_MODEL = "gpt-live-1"
+GPT_LIVE_DELEGATE = os.environ.get("GPT_LIVE_DELEGATE", "gpt-5.5")   # Responses backend; "" = none
+
+
+async def relay_gpt_live(ws, silence_ms: int, out_dir: Path, model: str = GPT_LIVE_MODEL,
+                         instructions: str = DEFAULT_INSTRUCTIONS):
+    """Browser WS ↔ GPT-Live (the /live API, not /realtime). Same contract as relay_gpt: writes both tracks, returns the write-out info.
+
+    Differences from GPT-Realtime that matter here:
+    · the model track is ONE continuous 24k stream from session start (silent when not speaking, like moshi/gemini),
+      not per-response segments -- so it anchors once at the user-track position of the first chunk and stays aligned by its own clock;
+    · no server VAD and no speech_started -- it's full-duplex, so there is no barge-in "clear" to forward (silence_ms is unused, kept for dispatch);
+    · config goes in session.start (model included) and the URL takes no query parameters;
+    · deep reasoning is delegated to a Responses backend (GPT_LIVE_DELEGATE, default gpt-5.5); set it to "" to run the Live model alone.
+    """
+    import websockets
+
+    key = os.environ["OPENAI_API_KEY"]
+    user = {"pcm": bytearray(), "n": 0}       # contiguous mic PCM + samples received so far (= user track's current position)
+    model_blocks = []                         # one entry: [(user_off_sec, the whole continuous stream)]
+    cur = {"off": None, "buf": bytearray()}
+    clk = []                                  # (wall_sec, model_samples, user_samples) sampled on every output delta
+    total = {"model": 0}                      # model samples received across all blocks
+    raw_pcm = bytearray()                     # every output sample, concatenated -- live_align.py places it
+    tr = []                                   # server-clock transcript deltas, for the post-run alignment check
+    stop = asyncio.Event()
+
+    def _flush_block():
+        if cur["off"] is not None and cur["buf"]:
+            model_blocks.append((cur["off"], bytes(cur["buf"])))
+        cur["off"], cur["buf"] = None, bytearray()
+
+    async def _say(obj):
+        if not ws.closed:
+            await ws.send_str(json.dumps(obj))
+
+    session = {
+        "model": model,
+        "audio": {"format": {"type": "audio/pcm", "rate": SR}},
+        "instructions": instructions,
+    }
+    if GPT_LIVE_DELEGATE:
+        session["delegation"] = {"type": "responses", "responses": {"model": GPT_LIVE_DELEGATE}}
+
+    # the TLS handshake to api.openai.com through a local proxy resets now and then -- retry rather than losing the item
+    mws = None
+    for attempt in range(1, 5):
+        try:
+            mws = await websockets.connect(GPT_LIVE_URL, additional_headers={"Authorization": f"Bearer {key}"},
+                                           max_size=None, open_timeout=30)
+            break
+        except Exception as e:  # noqa: BLE001
+            print(f"[gpt-live] connect attempt {attempt}: {type(e).__name__}: {e}", flush=True)
+            await asyncio.sleep(1.0 * attempt)
+    if mws is None:
+        await _say({"type": "err", "text": f"can't connect to {GPT_LIVE_URL}"})
+        return None
+
+    async with mws:
+        await mws.send(json.dumps({"type": "session.start", "session": session}))
+        t0 = time.time()
+        while True:                                    # wait for session.started before letting audio in
+            e = json.loads(await asyncio.wait_for(mws.recv(), 30))
+            if e.get("type") == "session.started":
+                break
+            if e.get("type") == "error":
+                await _say({"type": "err", "text": json.dumps(e.get("error") or e)})
+                return None
+        print(f"[gpt-live] session.started in {time.time()-t0:.2f}s (delegate={GPT_LIVE_DELEGATE or 'none'})", flush=True)
+        await _say({"type": "ready"})
+
+        async def from_browser():
+            async for msg in ws:
+                if msg.type == WSMsgType.BINARY:
+                    user["pcm"] += msg.data                    # contiguous concat (mic never stops)
+                    user["n"] += len(msg.data) // 2            # int16 sample count
+                    try:
+                        await mws.send(json.dumps({"type": "session.input_audio.append",
+                                                   "audio": base64.b64encode(msg.data).decode()}))
+                    except Exception:  # noqa: BLE001
+                        pass
+                elif msg.type == WSMsgType.TEXT:
+                    try:
+                        d = json.loads(msg.data)
+                    except Exception:  # noqa: BLE001
+                        d = {}
+                    if d.get("type") == "bye":
+                        break
+                elif msg.type in (WSMsgType.CLOSE, WSMsgType.CLOSING, WSMsgType.ERROR):
+                    break
+            stop.set()
+
+        async def from_model():
+            try:
+                async for raw in mws:
+                    if stop.is_set():
+                        break
+                    e = json.loads(raw)
+                    t = e.get("type", "")
+                    if t == "session.output_audio.delta":
+                        pcm = base64.b64decode(e["delta"])
+                        # The delta stream is NOT a timeline: the server drops silent output frames, so
+                        # concatenating it pulls everything after a gap earlier (-1.6s by the end of a 43s
+                        # item), and anchoring by arrival instead just swaps that for the network latency
+                        # (+1.2s through a proxy). Neither is usable for timing. Keep the raw stream here
+                        # and let live_align.py place it on the server's own session clock, post-ASR.
+                        if cur["off"] is None:
+                            cur["off"] = user["n"] / SR
+                        cur["buf"] += pcm
+                        raw_pcm.extend(pcm)
+                        total["model"] += len(pcm) // 2
+                        clk.append((round(time.time() - t0, 3), total["model"], user["n"]))
+                        if not ws.closed:
+                            await ws.send_bytes(pcm)
+                    elif t == "session.output_transcript.delta":
+                        # start_ms/end_ms are the server's own session clock -- the only authoritative
+                        # timeline we get, so keep it to check the recorded tracks against afterwards
+                        tr.append({"who": "model", "start_ms": e.get("start_ms"), "end_ms": e.get("end_ms"),
+                                   "text": e.get("delta", ""), "user_s": round(user["n"] / SR, 3)})
+                        await _say({"type": "model_text", "text": e.get("delta", "")})
+                    elif t == "session.input_transcript.delta":
+                        tr.append({"who": "user", "start_ms": e.get("start_ms"), "end_ms": e.get("end_ms"),
+                                   "text": e.get("delta", ""), "user_s": round(user["n"] / SR, 3)})
+                        await _say({"type": "user_text", "text": e.get("delta", "")})
+                    elif t == "error":
+                        await _say({"type": "err", "text": json.dumps(e.get("error") or e)})
+                        print(f"[gpt-live] error {json.dumps(e)[:300]}", flush=True)
+            except asyncio.CancelledError:
+                pass
+            except Exception as exc:  # noqa: BLE001
+                print(f"[gpt-live] reader died: {type(exc).__name__}: {exc}", flush=True)
+
+        fb = asyncio.create_task(from_browser())
+        fm = asyncio.create_task(from_model())
+        await fb
+        stop.set()
+        await asyncio.sleep(0.2)
+        fm.cancel()
+        _flush_block()
+        try:
+            await mws.send(json.dumps({"type": "session.close"}))
+        except Exception:  # noqa: BLE001
+            pass
+
+    info = _write_tracks(bytes(user["pcm"]), model_blocks, out_dir)
+    (out_dir / "transcript_clock.json").write_text(json.dumps(tr, ensure_ascii=False, indent=1))
+    sf.write(str(out_dir / "B_model_raw.wav"),
+             np.frombuffer(bytes(raw_pcm), dtype="<i2"), SR, subtype="PCM_16")
+    info["clock"] = _clock_report(clk, out_dir)
+    return info
+
+
+def _clock_report(clk, out_dir: Path):
+    """Did the two tracks stay on one clock?
+
+    relay_gpt_live anchors the model's continuous stream at the user-track position of its first chunk,
+    which is only sound while the model stream, the user stream and the wall clock all advance 1:1.
+    Each sample is (wall_sec, model_samples, user_samples); drift is how far the two tracks have pulled
+    apart since the anchor, in milliseconds -- the sign says which way the model track is displaced.
+    """
+    if len(clk) < 2:
+        return {"n": len(clk)}
+    (w0, m0, u0), (w1, m1, u1) = clk[0], clk[-1]
+    span = w1 - w0
+    model_rate = (m1 - m0) / SR / span if span > 0 else 0      # model seconds produced per wall second
+    user_rate = (u1 - u0) / SR / span if span > 0 else 0       # user seconds consumed per wall second
+    drift = [round(((m - m0) - (u - u0)) / SR * 1000) for _, m, u in clk]
+    (out_dir / "clock.jsonl").write_text(
+        "".join(json.dumps({"t": w, "model_s": round((m - m0) / SR, 3),
+                            "user_s": round((u - u0) / SR, 3), "drift_ms": d}) + "\n"
+                for (w, m, u), d in zip(clk, drift)))
+    return {"n": len(clk), "span_s": round(span, 2),
+            "model_rate": round(model_rate, 4), "user_rate": round(user_rate, 4),
+            "drift_ms_final": drift[-1], "drift_ms_max": max(drift, key=abs)}
+
+
 MOSHI_SR = 24000
 MOSHI_FRAME = 480                 # 20ms@24k -- matches the official web client's opus-recorder encoderFrameSize:20
 MOSHI_DEFAULT_URL = "ws://localhost:8998/api/chat"

@@ -10,6 +10,7 @@ InteractionBench evaluates full-duplex spoken-dialogue models on what actually m
 
 | id | system |
 |---|---|
+| `gptlive` | GPT-Live-1 |
 | `gpt` | GPT-Realtime |
 | `gemini` | Gemini-Live |
 | `moshi` | Moshi (Kyutai) |
@@ -83,7 +84,7 @@ Each dimension has its own grader; they (re)score from the recorded tracks + ASR
 | **Paralinguistic** — whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
 | **Interaction groundedness** | `uv run python grade_interaction.py --model all` |
 
-`grade.py --list` shows available dashboard runs; omit `[models…]` to grade all six systems. Every grader writes the standard `grade.json` (`summary.{n,npass,rate}` + per-event detail) that the site reads.
+`grade.py --list` shows available dashboard runs; omit `[models…]` to grade all seven systems. Every grader writes the standard `grade.json` (`summary.{n,npass,rate}` + per-event detail) that the site reads.
 
 Then aggregate everything into the site data:
 

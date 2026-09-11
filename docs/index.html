@@ -202,7 +202,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <div class="badges">
     <span class="pill strong">Twelve scenarios</span>
     <span class="pill">Three evaluation dimensions</span>
-    <span class="pill">211 items × 6 systems = 1,200+ graded recordings</span>
+    <span class="pill">211 items × 7 systems = 1,400+ graded recordings</span>
   </div>
   <div class="badges">
     <a class="pill" href="https://github.com/avera-labs">▹ Code &amp; data</a>
@@ -316,7 +316,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="board"><div class="wrap">
   <div class="eyebrow">Leaderboard</div>
   <h2>Per-task ranking</h2>
-  <p class="muted">Each card ranks all six systems by the share of items they handled correctly on that task —
+  <p class="muted">Each card ranks all seven systems by the share of items they handled correctly on that task —
     higher is better. Timing tasks (backchannel, pause, interruption, keyword-wait, grammar, stay-quiet) score
     conversational behaviour; reasoning tasks (logic, countdown) score the spoken answer. Select a card to jump
     to that task's audio examples below.</p>
@@ -329,7 +329,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <h2>Results</h2>
   <p class="muted">The three dimensions — reasoning accuracy, conversational timing, and paralinguistic
     control — are reported in separate tables and are not combined into an overall rank. Each figure is
-    measured over the items in its scenario, among the six systems evaluated here.</p>
+    measured over the items in its scenario, among the seven systems evaluated here.</p>
 
   <h3>Spoken-task accuracy — items answered correctly, out of 50</h3>
   <p class="small muted">Fifty spoken items per system, ten in each of five scenarios: logic questions,
@@ -383,7 +383,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="samples"><div class="wrap">
   <div class="eyebrow">Listen</div>
   <h2>Hear it for yourself</h2>
-  <p class="muted">The same recording is played to all six systems, so any difference comes from the system.
+  <p class="muted">The same recording is played to all seven systems, so any difference comes from the system.
     Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
     button is a two-track timeline: <span style="color:var(--user);font-weight:600">user</span> on top,
     <span style="color:var(--model);font-weight:600">model</span> on the bottom, and
@@ -396,7 +396,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="analysis"><div class="wrap">
   <div class="eyebrow">Analysis</div>
   <h2>Analysis</h2>
-  <p class="muted">Each reading below is scoped to the six systems and twelve scenarios evaluated here. The
+  <p class="muted">Each reading below is scoped to the seven systems and twelve scenarios evaluated here. The
     reasoning set is a few narrow task types and should not be read as general intelligence.</p>
   <div class="finding"><div class="n">1</div><div>
     <h3>Timing behaviour does not predict reasoning-task accuracy</h3>
@@ -416,7 +416,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <p class="muted">No evaluated system completed a grammar-repair item. That scenario asks the system to
       correct the user during their own sentence, which requires listening while speaking <i>and</i> the
       initiative to interject on the error word. It is the one scenario that grades content and interruption
-      timing together, and none of the six systems produced both at once.</p></div></div>
+      timing together, and none of the seven systems produced both at once.</p></div></div>
 </div></section>
 
 <!-- METHOD -->
@@ -524,7 +524,7 @@ const TASK_LABEL = {
   alternating_count:"Alternating count",
   whisper_production:"Whisper on request", volume_understanding:"Volume understanding",
   interaction_groundedness:"Interaction groundedness"};
-const SYS_COLOR = {gpt:"#4c51bf",gemini:"#2b6cb0",moshi:"#38a169",personaplex:"#2f855a",
+const SYS_COLOR = {gptlive:"#c05621",gpt:"#4c51bf",gemini:"#2b6cb0",moshi:"#38a169",personaplex:"#2f855a",
   freezeomni:"#805ad5",halfduplex:"#b7791f"};
 const fmtPct = v => v==null ? "—" : Math.round(v*100)+"%";
 const TASK_DESC = {

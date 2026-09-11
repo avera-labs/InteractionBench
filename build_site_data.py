@@ -23,9 +23,9 @@ DOCS = ROOT / "docs"                    # docs/ at the repo root (GitHub Pages o
 AUD = DOCS / "audio"
 DATA = DOCS / "data"
 
-SYSTEMS = ["gpt", "gemini", "moshi", "personaplex", "freezeomni", "halfduplex"]
-SYS_LABEL = {"gpt": "GPT-Realtime", "gemini": "Gemini-Live", "moshi": "Moshi",
-             "personaplex": "PersonaPlex", "freezeomni": "FreezeOmni",
+SYSTEMS = ["gptlive", "gpt", "gemini", "moshi", "personaplex", "freezeomni", "halfduplex"]
+SYS_LABEL = {"gptlive": "GPT-Live-1", "gpt": "GPT-Realtime", "gemini": "Gemini-Live",
+             "moshi": "Moshi", "personaplex": "PersonaPlex", "freezeomni": "FreezeOmni",
              "halfduplex": "Turn-based cascade"}
 BEHAV = ["backchannel", "pause", "turn_taking", "user_backchannel", "interruption"]
 # IQ = the combined "spoken-task accuracy" table (per task, reads grade.json's summary.rate).
@@ -37,13 +37,35 @@ PARA = ["whisper_production", "volume_understanding"]   # paralinguistic dimensi
 IG = "interaction_groundedness"                  # long multi-turn logic grounding (probes: nonsense/state/unknown/constraint...), its own board + examples
 GRAMMAR = ("grammar_correction",)                # grammar proactive-correction task (internal category name grammar_correction)
 # pin specific items to display for a task (these were re-run with correct timing; don't let auto-selection drop them when a verdict changes)
-PINNED = {"user_backchannel": ["17", "29"], "volume_understanding": ["03", "01"]}   # in 01, gemini softens to a whisper too, which demos well
+PINNED = {"user_backchannel": ["17", "29"], "volume_understanding": ["03", "01"],   # in 01, gemini softens to a whisper too, which demos well
+          # gpt-live-1 is full-duplex: these two show the split it creates. In turn_taking it answers at
+          # ~150ms where the turn-based systems take ~1.2s -- picked near its own median, not its best
+          # (-190ms) since a third of its replies start before the user is done. In backchannel it is the
+          # only system that backchannels repeatedly without ever grabbing the floor.
+          "turn_taking": ["18", "3"], "backchannel": ["4", "12"]}
 REASON_CONTENT = ("logic_puzzle", "countdown_completion", "grammar_correction", "keyword_wait")
 K_PER_TASK = 2                                   # how many examples to feature per task
 
 # ---------------------------------------------------------------- per-item verdict
 def _num(x):
     return x if isinstance(x, (int, float)) else None
+
+
+def load_result(d, task):
+    """Read a run's result json, tagged with whether the model ever spoke at all.
+
+    pause and user_backchannel are scored by what the model did WRONG (barged into the pause /
+    got derailed), so a system that never opens its mouth scores a clean sheet on both -- FreezeOmni
+    sat silent through 6 pause items and was credited with "waited patiently" for every one. The
+    model track's ASR settles it, and it is already on disk, so no re-grading is needed.
+    """
+    j = json.load(open(f"{d}/{result_name(task)}"))
+    if task in ("pause", "user_backchannel"):
+        try:
+            j["_spoke"] = bool(json.load(open(f"{d}/B_model.parakeet.json")).get("words"))
+        except Exception:  # noqa: BLE001 -- no ASR on disk: leave it unset rather than guess
+            pass
+    return j
 
 
 def eval_item(task, j):
@@ -58,6 +80,9 @@ def eval_item(task, j):
         return dict(good=good, badge=badge, cls="good" if good else "bad", metric=f"bc={nb}", heard=heard)
     if task == "pause":
         ji = j.get("jumped_in")
+        if j.get("_spoke") is False:                      # never answered -> not "patient", just absent
+            return dict(good=False, badge="no reply", cls="warn",
+                        metric=f"pause={j.get('pause_dur')}s", heard="")
         good = ji is False
         badge = "barged in on pause" if ji else "waited patiently"
         return dict(good=good, badge=badge, cls="good" if good else "bad",
@@ -79,6 +104,8 @@ def eval_item(task, j):
                     metric=f"{int(lat)}ms", heard=heard)
     if task == "user_backchannel":
         der = j.get("derailed")
+        if j.get("_spoke") is False:                      # a system that says nothing cannot be derailed
+            return dict(good=False, badge="no reply", cls="warn", metric="—", heard="")
         good = der is False
         badge = "derailed / cut off" if der else "stayed on track"
         return dict(good=good, badge=badge, cls="good" if good else "bad",
@@ -381,7 +408,7 @@ def leaderboard(task):
             rf = f"{d}/{result_name(task)}"
             if os.path.exists(rf):
                 try:
-                    vals.append(json.load(open(rf)))
+                    vals.append(load_result(d, task))
                 except Exception:  # noqa: BLE001
                     pass
         agg[sysn] = summarize(task, vals)
@@ -407,7 +434,8 @@ def summarize(task, vals):
         base.update(avg_bc=mean(lambda v: v.get("n_backchannel", 0)),
                     floor_take=mean(lambda v: 1.0 if v.get("tor") else 0.0))
     elif task == "pause":
-        base.update(bargein=mean(lambda v: 1.0 if v.get("jumped_in") else 0.0))
+        base.update(bargein=mean(lambda v: 1.0 if v.get("jumped_in") else 0.0),
+                    no_reply=mean(lambda v: 1.0 if v.get("_spoke") is False else 0.0))
     elif task == "turn_taking":
         def _clean(v):                                   # replied AND started after the user finished (within window)
             l = _num(v.get("latency_ms"))
@@ -417,7 +445,8 @@ def summarize(task, vals):
                     med_lat=median([v.get("latency_ms") for v in vals            # clean-start latency only (drop overlaps)
                                     if _num(v.get("latency_ms")) is not None and v.get("latency_ms") >= -50]))
     elif task == "user_backchannel":
-        base.update(derail=mean(lambda v: 1.0 if v.get("derailed") else 0.0))
+        base.update(derail=mean(lambda v: 1.0 if v.get("derailed") else 0.0),
+                    no_reply=mean(lambda v: 1.0 if v.get("_spoke") is False else 0.0))
     elif task == "interruption":
         base.update(yielded=mean(lambda v: 1.0 if v.get("was_talking") else 0.0),
                     addressed=mean(lambda v: 1.0 if (v.get("relevance") or {}).get("addressed") == "yes" else 0.0))
@@ -438,12 +467,12 @@ def rank_systems(task, lb):
         m = lb.get(s, {})
         if task == "backchannel":                       # more backchannels + less floor-grabbing
             return (-(m.get("avg_bc") or 0), m.get("floor_take") if m.get("floor_take") is not None else 1)
-        if task == "pause":                             # fewer barge-ins
-            return (m.get("bargein") if m.get("bargein") is not None else 1,)
+        if task == "pause":                             # waited AND actually replied, then fewer barge-ins
+            return (-(m.get("pass_rate") or 0), m.get("bargein") if m.get("bargein") is not None else 1)
         if task == "turn_taking":                       # more clean turn starts, then lower latency
             return (-(m.get("clean") or 0), m.get("med_lat") if m.get("med_lat") is not None else 9e9)
-        if task == "user_backchannel":                  # less derailed
-            return (m.get("derail") if m.get("derail") is not None else 1,)
+        if task == "user_backchannel":                  # stayed on track AND actually replied
+            return (-(m.get("pass_rate") or 0), m.get("derail") if m.get("derail") is not None else 1)
         if task == "interruption":                      # more interrupts caught and addressed
             return (-(m.get("addressed") or 0), -(m.get("yielded") or 0))
         return (-(m.get("npass") or 0),)                # IQ: more correct
@@ -461,7 +490,7 @@ def timing_totals():
                 if not os.path.exists(rf):
                     continue
                 try:
-                    e = eval_item(task, json.load(open(rf)))
+                    e = eval_item(task, load_result(d, task))
                 except Exception:  # noqa: BLE001
                     continue
                 r[s]["n"] += 1
@@ -562,7 +591,7 @@ def main():
         for item, m in dirs.items():
             evals = {}
             for s, d in m.items():
-                jsn = json.load(open(f"{d}/{result_name(task)}"))
+                jsn = load_result(d, task)
                 e = eval_item(task, jsn)
                 e["reason"] = judge_reason(task, jsn)
                 evals[s] = e
@@ -641,7 +670,7 @@ def main():
         for item, m in dirs.items():
             evals = {}
             for s, d in m.items():
-                jsn = json.load(open(f"{d}/{result_name(task)}"))
+                jsn = load_result(d, task)
                 e = eval_item(task, jsn)
                 e["reason"] = judge_reason(task, jsn)
                 evals[s] = e

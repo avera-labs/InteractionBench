@@ -388,6 +388,8 @@ def _pcm16(f32: np.ndarray) -> bytes:
 async def _run_relay(model, ws, out_dir, silence_ms, url, prompt):
     if model == "gpt":
         return await live_ws.relay_gpt(ws, silence_ms, out_dir)
+    if model == "gptlive":
+        return await live_ws.relay_gpt_live(ws, silence_ms, out_dir)
     if model == "gemini":
         return await live_ws.relay_gemini(ws, out_dir, silence_ms=silence_ms)
     if model == "freezeomni":                                       # pass an English prompt, otherwise it defaults to a Chinese persona
@@ -513,8 +515,8 @@ async def drive_model(model: str, f32: np.ndarray, out_dir: Path, silence_ms: in
     return info
 
 
-def run_parakeet(out_dir: Path):
-    for stem in ("A_user", "B_model"):
+def run_parakeet(out_dir: Path, stems=("A_user", "B_model")):
+    for stem in stems:
         wav = out_dir / f"{stem}.wav"
         if not wav.exists():
             continue
@@ -605,6 +607,17 @@ def run_one(model: str, input_wav: Path, task: str, gemini: bool, silence_ms: in
         return None
     print(f"  recorded {info['secs']}s, running parakeet…", flush=True)
     run_parakeet(out_dir)
+    if model == "gptlive":
+        # The Live API's audio deltas carry no timestamps, so the relay can only record the raw stream;
+        # placing it on the user timeline needs the session clock, which needs the user track's ASR first.
+        import vad_utils
+
+        import live_align
+        placed = live_align.place(out_dir, parakeet_local.transcribe_wav_segmented, vad_utils.vad_segments)
+        if placed and placed.get("placed"):
+            run_parakeet(out_dir, stems=("B_model",))     # re-transcribe the track we just moved
+        elif placed:
+            print(f"  ! session-clock placement skipped: {placed.get('why')}", flush=True)
     key = os.environ.get("GEMINI_API_KEY") if gemini else None
     if task == "benchmark":                           # ground-truth right/wrong grading
         import shutil
@@ -628,7 +641,7 @@ def run_one(model: str, input_wav: Path, task: str, gemini: bool, silence_ms: in
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="gpt",
-                    choices=["gpt", "gemini", "moshi", "personaplex", "freezeomni", "halfduplex"])
+                    choices=["gpt", "gptlive", "gemini", "moshi", "personaplex", "freezeomni", "halfduplex"])
     ap.add_argument("--input", type=Path, help="a single user audio wav")
     ap.add_argument("--input-dir", type=Path, help="batch: all wavs in the directory matching --glob")
     ap.add_argument("--glob", default="[0-9][0-9].wav")
