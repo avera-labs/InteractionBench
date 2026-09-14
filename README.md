@@ -1,6 +1,6 @@
 # InteractionBench
 
-**Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems.**
+**Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems.**
 
 InteractionBench evaluates full-duplex spoken-dialogue models on what actually makes a voice assistant feel present in a conversation — not just *what* it answers, but *when* it speaks, *how* it sounds, and whether it stays *grounded* across a long exchange. The same recordings are played to every system, so any difference in the result comes from the system.
 
@@ -54,7 +54,7 @@ uv sync                                   # create the environment
 cp .env.example .env                      # then fill in your API keys
 ```
 
-`moshi` / `personaplex` / `freezeomni` require their model servers to be running (see the [Live dashboard](#live-dashboard)); `gpt` / `gemini` use their hosted APIs; `halfduplex` runs fully locally.
+`moshi` / `personaplex` / `freezeomni` require their model servers to be running (see the [Live dashboard](#live-dashboard)); `gpt` / `gemini` use their hosted APIs; `halfduplex` runs locally except for its language-model call (OpenAI `gpt-4o-mini`).
 
 ### 1. Run a system over a scenario
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>InteractionBench — Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems</title>
+<title>InteractionBench — Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opt@0,6..72;1,6..72&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -198,11 +198,11 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <header class="hero"><div class="wrap">
   <div class="eyebrow">InteractionBench · AveraLabs</div>
   <h1>InteractionBench</h1>
-  <p class="sub">Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems.</p>
+  <p class="sub">Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems.</p>
   <div class="badges">
-    <span class="pill strong">Twelve scenarios</span>
-    <span class="pill">Three evaluation dimensions</span>
-    <span class="pill">211 items × 7 systems = 1,400+ graded recordings</span>
+    <span class="pill strong">Thirteen scenarios</span>
+    <span class="pill">Four evaluation dimensions</span>
+    <span class="pill">221 items × 7 systems = 1,500+ graded recordings</span>
   </div>
   <div class="badges">
     <a class="pill" href="https://github.com/avera-labs">▹ Code &amp; data</a>
@@ -222,9 +222,10 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <p class="muted">Conversational benchmarks tend to measure interaction; task benchmarks tend to measure
     whether the answer was correct. A real-time voice system has to manage both at once, and the two can
     come apart — a system that handles turns gracefully may still answer poorly, and a system that answers
-    well may misread the user's timing. InteractionBench measures reasoning accuracy, conversational timing,
-    and paralinguistic control in recorded sessions, using the same audio inputs and the same evaluators
-    across every system, and reports the three dimensions separately so they can be read on their own terms.</p>
+    well may misread the user's timing. InteractionBench measures conversational timing, spoken-task accuracy,
+    paralinguistic control, and groundedness over long conversations, using the same recorded user audio and
+    the same graders across every system, and reports the four dimensions separately so they can be read on
+    their own terms.</p>
 </div></section>
 
 <!-- EVALUATION DESIGN -->
@@ -233,10 +234,11 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <h2>Design choices</h2>
   <p class="muted">Four choices shape what the results can and cannot show.</p>
   <ul class="mlist">
-    <li><b>Timing and reasoning are reported separately</b> — combining them into one score would hide
-      systems that do well on one dimension and poorly on the other.</li>
-    <li><b>The same audio input drives every system</b>, so a difference between recordings comes from the
-      system and not from a differently worded prompt.</li>
+    <li><b>The four dimensions are reported separately</b> — combining them into one score would hide
+      systems that do well on one dimension and poorly on another.</li>
+    <li><b>The same recorded user audio drives every system.</b> Two things are not identical across systems
+      and are reported rather than hidden: the text instruction each system accepts, and, on multi-turn
+      items, the moment the next user turn is released (see Limitations).</li>
     <li><b>A turn-based cascade supplies an architecture reference</b>, which lets a timing failure be
       attributed to endpointing rather than to the language model that produced the answer.</li>
     <li><b>Every item stays inspectable</b> — the audio, transcripts, two-track timeline, and the grader's
@@ -247,11 +249,12 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <!-- SCENARIOS -->
 <section id="scenarios"><div class="wrap">
   <div class="eyebrow">Scenarios</div>
-  <h2>Twelve scenarios</h2>
-  <p class="muted">Five scenarios test conversational timing; five test spoken-answer accuracy — two of which
-    also demand <b>restraint</b> (staying quiet until the right moment); and two test <b>paralinguistic
-    control</b> — whispering on request and understanding volume. Each one below states what happens, what a
-    successful system does, and what to listen for in the samples.</p>
+  <h2>Thirteen scenarios</h2>
+  <p class="muted">Five scenarios test conversational timing; five test spoken-task accuracy — two of which
+    also demand <b>restraint</b> (staying quiet until the right moment); two test <b>paralinguistic
+    control</b> — whispering on request and understanding volume; and one tests <b>groundedness</b> across
+    ten conversations of more than twenty turns (described with its results below). Each scenario below states
+    what happens, what a successful system does, and what to listen for in the samples.</p>
   <div class="taskfam">
     <div class="taskcol"><h3>Conversational timing</h3>
       <div class="scen"><div class="name">Backchannel</div>
@@ -327,8 +330,9 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="results"><div class="wrap">
   <div class="eyebrow">Results</div>
   <h2>Results</h2>
-  <p class="muted">The three dimensions — reasoning accuracy, conversational timing, and paralinguistic
-    control — are reported in separate tables and are not combined into an overall rank. Each figure is
+  <p class="muted">The four dimensions — conversational timing, spoken-task accuracy, paralinguistic
+    control, and interaction groundedness — are reported in separate tables and are not combined into an
+    overall rank. Each figure is
     measured over the items in its scenario, among the seven systems evaluated here.</p>
 
   <h3>Spoken-task accuracy — items answered correctly, out of 50</h3>
@@ -337,11 +341,11 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     counts when the spoken response meets its scenario's target — the right answer, the right interjection,
     or waiting quietly and then answering.</p>
   <div class="tbl-wrap"><table id="lb-iq"></table></div>
-  <p class="small muted">The turn-based cascade leads overall, with the hosted real-time APIs close behind;
-    the open real-time models trail sharply — most of their loss is on the two <b>restraint</b> scenarios
-    (keyword-wait and stay-quiet), where always being able to speak becomes a liability. No system completes
-    a grammar-repair item — a proactive real-time correction that remains unsolved and is discussed in the
-    analysis.</p>
+  <p class="small muted">The three hosted systems and the cascade answer 33–37 of 50 items and cannot be told
+    apart at this sample size; the open full-duplex models answer 3–14, and most of their loss is on the two
+    <b>restraint</b> scenarios (keyword-wait and stay-quiet), where always being able to speak becomes a
+    liability. No system completes a grammar-repair item — a correction within 50–300 ms of the error, while
+    the user is still speaking — which is discussed in the analysis.</p>
 
   <h3>Conversational timing — per-scenario metric</h3>
   <p class="small muted">Each column reports one behaviour over that scenario's items; green marks the best
@@ -352,17 +356,23 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <b>Yield &amp; answer</b>: the rate at which the system, caught mid-speech, stopped and addressed an
     interruption (higher is intended).</p>
   <div class="tbl-wrap"><table id="lb-behav"></table></div>
+  <p class="small muted">Two things qualify GPT-Live's pause figure. Barge-in counts any vocalisation in the
+    pause, a backchannel included: GPT-Live speaks in 28 of 30 pauses, and in 8 of them it says only
+    “Mm-hmm” or “Yeah, go on.” It is also the only system whose audio is placed on the server's session clock
+    rather than at arrival (see Limitations), so its timing figures are not like-for-like with the other
+    hosted systems.</p>
 
   <h3>Paralinguistic control — whisper &amp; volume</h3>
   <p class="small muted">Two voice-quality tests. <b>Whisper on request</b> (10 items): the user asks the
     system to whisper its answer; a reply counts only if it is <b>acoustically a real whisper</b> — breathy,
-    unvoiced, low harmonics-to-noise ratio (HNR &lt; 6&nbsp;dB) — judged from the audio, not from the model
+    unvoiced, low harmonics-to-noise ratio (HNR &lt; 6&nbsp;dB) and voiced fraction below 0.4 — judged from the audio, not from the model
     merely <i>saying</i> it will whisper. <b>Volume understanding</b> (10 items, 5 whispered + 5 loud): does the
     system give an appropriate answer to a user speaking very softly or very loudly. <b>Adapt</b> is the share of
     the 5 whispered prompts on which the system also lowered its own voice in reply.</p>
   <div class="tbl-wrap"><table id="lb-para"></table></div>
-  <p class="small muted">Whispering on request is the clearest divider: only one system produces a genuine
-    breathy whisper; most just answer aloud (or say “okay, whispering” without changing their voice). Volume
+  <p class="small muted">Whispering on request is the clearest divider: only one system reliably produces a genuine
+    breathy whisper (Gemini Live, 8 of 10); GPT-Live and GPT-Realtime manage 2 of 10, and the rest answer
+    aloud (or say “okay, whispering” without changing their voice). Volume
     <i>understanding</i> is widespread, but <i>adapting</i> one's own volume to match the user is almost absent —
     understanding a cue and acting on it come apart, as elsewhere in the benchmark.</p>
 
@@ -374,17 +384,18 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     an answer. Each probe is graded from the transcript of what the system actually said; <b>Grounded</b> counts
     probes answered correctly, and <b>Coherence</b> (0–100) rates how consistent the whole conversation stayed.</p>
   <div class="tbl-wrap"><table id="lb-ig"></table></div>
-  <p class="small muted">The hosted real-time APIs hold the thread best; the open real-time models fall away
-    sharply on long context — the weakest ignore the conversation and recite generic filler, failing nearly
-    every probe. Flagging nonsense and tracking a changed value are the most common failures across systems.</p>
+  <p class="small muted">The hosted systems answer 35–45 of 52 probes and the open full-duplex models 7–19,
+    with the cascade between them. Nonsense questions and questions about information the user never gave are
+    the hardest probe types. For Moshi and Freeze-Omni a large share of failures are missing replies rather than
+    wrong ones, and for GPT-Realtime most are, so this score mixes grounding with responsiveness.</p>
 </div></section>
 
 <!-- SAMPLES -->
 <section id="samples"><div class="wrap">
   <div class="eyebrow">Listen</div>
   <h2>Hear it for yourself</h2>
-  <p class="muted">The same recording is played to all seven systems, so any difference comes from the system.
-    Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
+  <p class="muted">The same recording is played to all seven systems; what differs between them is the text
+    instruction each received and the moment the next user turn was released (see Limitations). Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
     button is a two-track timeline: <span style="color:var(--user);font-weight:600">user</span> on top,
     <span style="color:var(--model);font-weight:600">model</span> on the bottom, and
     <span style="color:var(--overlap);font-weight:600">red</span> where they talk over each other.
@@ -396,27 +407,31 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="analysis"><div class="wrap">
   <div class="eyebrow">Analysis</div>
   <h2>Analysis</h2>
-  <p class="muted">Each reading below is scoped to the seven systems and twelve scenarios evaluated here. The
-    reasoning set is a few narrow task types and should not be read as general intelligence.</p>
+  <p class="muted">Each reading below is scoped to the seven systems and thirteen scenarios evaluated here. With
+    seven systems these are descriptive, and each should be read together with the limitations further down.</p>
   <div class="finding"><div class="n">1</div><div>
-    <h3>Timing behaviour does not predict reasoning-task accuracy</h3>
-    <p class="muted">The two measures come apart. Moshi produced 3.22 backchannels per conversation but
-      answered 2 of 30 reasoning items; GPT-Realtime produced 0.50 backchannels and answered 20 of 30.
-      A system that manages turns well is therefore not, on this evidence, a system that answers well —
-      the two are worth reporting separately rather than as a single score.</p></div></div>
+    <h3>Among full-duplex systems, timing and task accuracy rise together; the cascade inverts them</h3>
+    <p class="muted">Across the six full-duplex systems, the timing aggregate and spoken-task accuracy have a
+      rank correlation of 0.89; with the cascade included it falls to 0.18. The cascade is perfect where
+      waiting for silence is enough — turn-taking 1.00, user backchannel 1.00 — and fails where it must act
+      during the user's speech — pause 0.00, backchannel 0.05, interruption 0.23 — while answering the most
+      spoken tasks (37 of 50). Earlier benchmarks reported this pattern one facet at a time; here it holds
+      with every facet measured on the same systems.</p></div></div>
   <div class="finding"><div class="n">2</div><div>
-    <h3>The turn-based cascade preserves reasoning but mishandles pauses</h3>
-    <p class="muted">The cascade answered 17 of 30 reasoning items, competitive with the hosted systems on
-      these short tasks — its language-model component is the same kind of part. But it began speaking in
-      every evaluated mid-sentence pause, because a fixed endpoint reads a pause as the end of a turn.
-      Because answer quality and timing here move in opposite directions, its timing failures appear to
-      come from endpointing rather than from answer generation.</p></div></div>
+    <h3>Speaking up proactively and holding back are both hard, for different systems</h3>
+    <p class="muted">No system corrects a grammar error within 50–300 ms of hearing it while the user is still
+      speaking. On the two restraint scenarios, the hosted systems and the cascade pass 14–19 of 20 items; the
+      open full-duplex models pass 0–6. A system that is always able to speak has to decide not to.</p></div></div>
   <div class="finding"><div class="n">3</div><div>
-    <h3>Proactive grammar repair remains unresolved</h3>
-    <p class="muted">No evaluated system completed a grammar-repair item. That scenario asks the system to
-      correct the user during their own sentence, which requires listening while speaking <i>and</i> the
-      initiative to interject on the error word. It is the one scenario that grades content and interruption
-      timing together, and none of the seven systems produced both at once.</p></div></div>
+    <h3>Understanding a paralinguistic cue is not acting on it</h3>
+    <p class="muted">Most systems respond appropriately to a whispered or shouted request, but only Gemini Live
+      whispers on most explicit requests (8 of 10), and only 2 of the 35 whispered requests across all seven
+      systems drew a reply in a lowered voice.</p></div></div>
+  <div class="finding"><div class="n">4</div><div>
+    <h3>Groundedness separates hosted from open systems, most sharply on nonsense</h3>
+    <p class="muted">The hosted systems flag 7–9 of 10 nonsense questions and reject 4–6 of 6 false accusations;
+      the open full-duplex models flag 0–2 and reject 0–1. These are the probes a fluent reply fails while
+      sounding reasonable.</p></div></div>
 </div></section>
 
 <!-- METHOD -->
@@ -460,7 +475,7 @@ expected_overlap: required           target_response : "I have been to Paris."</
     <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>.</p>
 
   <h3>3 · Aligning ASR to audio to score it</h3>
-  <p class="muted">User turns are rendered with MiMo TTS (voice “Mia”, 24&nbsp;kHz) and streamed to each
+  <p class="muted">User turns are rendered with MiMo TTS (24&nbsp;kHz; one preset voice for most items, four voices with non-native accent directions for the grammar items) and streamed to each
     live model; both sides are recorded to separate tracks. <b>Parakeet</b> gives word-level timestamps
     and <b>WebRTC-VAD</b> gives speech boundaries — so we locate the trigger word in the user track and
     the assistant's first word in its track to the tens of milliseconds. Four dimensions fall out:</p>
@@ -469,13 +484,13 @@ expected_overlap: required           target_response : "I have been to Paris."</
     <li><b>Overlap</b> — did the reply land while the user was still talking (<i>required</i>) or wait for a gap (<i>forbidden</i>).</li>
     <li><b>Content</b> — Gemini checks the reply against the <b>known correct answer</b> with a per-category
       rubric, and is told to <i>compare, not re-solve</i> — e.g. a logic puzzle passes only if the answer
-      actually states “48”. Reasoning tasks judge the transcribed answer; timing tasks judge the sliced audio.</li>
+      actually states “48”. Spoken-task content is judged from the reply audio and its transcript against the target; timing scenarios judge the sliced audio.</li>
     <li><b>Silence</b> — for wait-type tasks, did the model correctly stay quiet until the trigger.</li>
   </ul>
   <p class="small muted">The word-by-word highlight under each sample above <i>is</i> that same Parakeet
     alignment, played back live — the transcript lights up in lock-step with the audio.</p>
   <p class="small muted">The turn-based cascade is run offline with the same building blocks
-    (voice-activity endpointing → Parakeet ASR → MiMo language model → MiMo TTS) and scored by the same harness.</p>
+    (voice-activity endpointing → Parakeet ASR → gpt-4o-mini → MiMo TTS) and scored by the same harness.</p>
 </div></section>
 
 <!-- LIMITATIONS -->
@@ -484,11 +499,15 @@ expected_overlap: required           target_response : "I have been to Paris."</
   <h2>Limitations</h2>
   <p class="muted">These boundaries mark where the current evidence stops.</p>
   <ul class="mlist">
-    <li>English only, with a single synthesized user voice.</li>
-    <li>Twelve focused scenario types rather than general task coverage; the reasoning set is a few narrow task types and is not a measure of general intelligence.</li>
-    <li>Scoring depends on automated ASR alignment and an LLM content judge, both of which can be wrong on a given item.</li>
-    <li>Latency includes provider-API and network effects that vary between runs and are not controlled here.</li>
-    <li>One particular turn-based cascade configuration; a different endpoint or language model would move its numbers.</li>
+    <li>English only, with synthesized user speech from a few preset voices and no noise or channel effects. Scenarios have 10–30 items; the alternating-count variant has one.</li>
+    <li><b>Two timing clocks.</b> GPT-Live's audio is placed on the server's session clock; every other system's is placed at the moment it arrived, which for the hosted APIs includes the network round trip. Timing comparisons between GPT-Live and the other hosted systems are not like-for-like.</li>
+    <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor — stricter than Full-Duplex-Bench. Under a backchannel-tolerant rule GPT-Live's pause score would be 0.33 rather than 0.07; no other system's score changes.</li>
+    <li><b>Text instructions differ across systems.</b> The three hosted systems received an instruction with a grammar-correction clause in every scenario; the open models and the cascade received different instructions, and Moshi none.</li>
+    <li>The next user turn is released after 1.5 s of silence or 14 s, which sometimes lands on a system that is still speaking — in the long conversations, on 26% of Gemini Live's turns, 17% of GPT-Live's, and 15% of Freeze-Omni's.</li>
+    <li>Semantic decisions are made by Gemini 2.5 Flash without a measured agreement with human raters; it belongs to the same model family as one evaluated system and also generated the groundedness conversations.</li>
+    <li>Thirteen of the 52 groundedness probes presuppose what the scripted assistant did, and have not been audited against what each system actually did.</li>
+    <li>The whisper criterion (harmonics-to-noise ratio below 6 dB, voiced fraction below 0.4) has not been validated on labelled whispered speech.</li>
+    <li>One cascade configuration, with gpt-4o-mini, constructed timing, and replies re-synthesised when its own recogniser mishears them.</li>
     <li>No evaluation of naturalness, prosody, safety, tool use, or long-horizon task completion.</li>
   </ul>
 </div></section>
@@ -501,7 +520,7 @@ expected_overlap: required           target_response : "I have been to Paris."</
     and Tairan Chen. The repository link points to the AveraLabs organization until the InteractionBench
     repository is public.</p>
   <div class="codeblock">@misc{averalabs2026interactionbench,
-  title  = {InteractionBench: Measuring reasoning, conversational timing, and paralinguistic control in real-time voice systems},
+  title  = {InteractionBench: Measuring Timing, Task Accuracy, Paralinguistic Control, and Grounding in Real-Time Voice Systems},
   author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen},
   year   = {2026},
   url    = {https://github.com/avera-labs},
