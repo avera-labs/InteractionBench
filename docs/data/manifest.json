@@ -566,9 +566,9 @@
    "gptlive": {
     "n": 10,
     "whisper": 2,
-    "npass": 1,
+    "npass": 2,
     "no_response": 0,
-    "pass_rate": 0.1
+    "pass_rate": 0.2
    },
    "gpt": {
     "n": 10,
@@ -49531,6 +49531,740 @@
   ],
   "whisper_production": [
    {
+    "item": "08",
+    "spread": 3,
+    "cells": [
+     {
+      "system": "gemini",
+      "audio": "audio/whisper_production/08/gemini.mp3",
+      "good": true,
+      "badge": "whispered & answered",
+      "cls": "good",
+      "metric": "HNR 5.3dB",
+      "heard": "It's six.",
+      "reason": "",
+      "timeline": {
+       "dur": 15.6,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         7.0,
+         8.15
+        ]
+       ],
+       "overlap": [],
+       "overlap_s": 0
+      },
+      "words": [
+       [
+        "It's",
+        7.03,
+        7.59
+       ],
+       [
+        "six.",
+        7.59,
+        8.23
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.8
+       ],
+       [
+        "answer",
+        0.8,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.92
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "gptlive",
+      "audio": "audio/whisper_production/08/gptlive.mp3",
+      "good": true,
+      "badge": "whispered & answered",
+      "cls": "good",
+      "metric": "HNR 2.7dB",
+      "heard": "Six.",
+      "reason": "",
+      "timeline": {
+       "dur": 15.6,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         6.8,
+         7.35
+        ]
+       ],
+       "overlap": [],
+       "overlap_s": 0
+      },
+      "words": [
+       [
+        "Six.",
+        6.9,
+        7.54
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.8
+       ],
+       [
+        "answer",
+        0.8,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.92
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "gpt",
+      "audio": "audio/whisper_production/08/gpt.mp3",
+      "good": true,
+      "badge": "whispered & answered",
+      "cls": "good",
+      "metric": "HNR 4.1dB",
+      "heard": "Six.",
+      "reason": "",
+      "timeline": {
+       "dur": 15.6,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         7.25,
+         8.0
+        ]
+       ],
+       "overlap": [],
+       "overlap_s": 0
+      },
+      "words": [
+       [
+        "Six.",
+        7.32,
+        8.04
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.8
+       ],
+       [
+        "answer",
+        0.8,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.92
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "halfduplex",
+      "audio": "audio/whisper_production/08/halfduplex.mp3",
+      "good": false,
+      "badge": "answered aloud — didn't whisper",
+      "cls": "bad",
+      "metric": "HNR 4.2dB",
+      "heard": "It's six.",
+      "reason": "",
+      "timeline": {
+       "dur": 8.22,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         6.9,
+         7.8
+        ]
+       ],
+       "overlap": [],
+       "overlap_s": 0
+      },
+      "words": [
+       [
+        "It's",
+        6.79,
+        7.11
+       ],
+       [
+        "six.",
+        7.27,
+        7.91
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.8
+       ],
+       [
+        "answer",
+        0.8,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.92
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "personaplex",
+      "audio": "audio/whisper_production/08/personaplex.mp3",
+      "good": false,
+      "badge": "no whisper, wrong",
+      "cls": "bad",
+      "metric": "HNR 14.2dB",
+      "heard": "Okay, let me That's eight.",
+      "reason": "",
+      "timeline": {
+       "dur": 18.28,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         6.1,
+         6.65
+        ],
+        [
+         9.1,
+         9.55
+        ]
+       ],
+       "overlap": [],
+       "overlap_s": 0
+      },
+      "words": [
+       [
+        "Okay,",
+        6.1,
+        6.34
+       ],
+       [
+        "let",
+        6.34,
+        6.5
+       ],
+       [
+        "me",
+        6.5,
+        6.58
+       ],
+       [
+        "That's",
+        9.05,
+        9.37
+       ],
+       [
+        "eight.",
+        9.37,
+        9.77
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.88
+       ],
+       [
+        "answer",
+        0.88,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.84
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "moshi",
+      "audio": "audio/whisper_production/08/moshi.mp3",
+      "good": false,
+      "badge": "answered aloud — didn't whisper",
+      "cls": "bad",
+      "metric": "HNR 16.7dB",
+      "heard": "Hey, what's up? The answer is six.",
+      "reason": "",
+      "timeline": {
+       "dur": 15.6,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         0.95,
+         1.7
+        ],
+        [
+         5.9,
+         6.75
+        ]
+       ],
+       "overlap": [
+        [
+         0.95,
+         1.7
+        ]
+       ],
+       "overlap_s": 0.8
+      },
+      "words": [
+       [
+        "Hey,",
+        0.81,
+        1.21
+       ],
+       [
+        "what's",
+        1.21,
+        1.61
+       ],
+       [
+        "up?",
+        1.61,
+        1.85
+       ],
+       [
+        "The",
+        5.76,
+        6.0
+       ],
+       [
+        "answer",
+        6.0,
+        6.32
+       ],
+       [
+        "is",
+        6.32,
+        6.56
+       ],
+       [
+        "six.",
+        6.56,
+        7.12
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.88
+       ],
+       [
+        "answer",
+        0.88,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.84
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     },
+     {
+      "system": "freezeomni",
+      "audio": "audio/whisper_production/08/freezeomni.mp3",
+      "good": false,
+      "badge": "no whisper, wrong",
+      "cls": "bad",
+      "metric": "HNR 13.8dB",
+      "heard": "Sure, I'll whisper the answer.",
+      "reason": "",
+      "timeline": {
+       "dur": 15.6,
+       "user": [
+        [
+         0.1,
+         2.45
+        ],
+        [
+         3.05,
+         5.45
+        ]
+       ],
+       "model": [
+        [
+         4.0,
+         5.8
+        ]
+       ],
+       "overlap": [
+        [
+         4.0,
+         5.45
+        ]
+       ],
+       "overlap_s": 1.5
+      },
+      "words": [
+       [
+        "Sure,",
+        3.84,
+        4.56
+       ],
+       [
+        "I'll",
+        4.56,
+        4.88
+       ],
+       [
+        "whisper",
+        4.88,
+        5.28
+       ],
+       [
+        "the",
+        5.28,
+        5.44
+       ],
+       [
+        "answer.",
+        5.44,
+        5.92
+       ]
+      ],
+      "uwords": [
+       [
+        "Whisper",
+        0.0,
+        0.64
+       ],
+       [
+        "the",
+        0.64,
+        0.8
+       ],
+       [
+        "answer",
+        0.8,
+        1.28
+       ],
+       [
+        "so",
+        1.28,
+        1.52
+       ],
+       [
+        "nobody",
+        1.52,
+        2.0
+       ],
+       [
+        "hears.",
+        2.0,
+        2.96
+       ],
+       [
+        "What's",
+        2.96,
+        3.6
+       ],
+       [
+        "ten",
+        3.6,
+        3.92
+       ],
+       [
+        "minus",
+        4.4,
+        4.96
+       ],
+       [
+        "four?",
+        4.96,
+        5.68
+       ]
+      ]
+     }
+    ]
+   },
+   {
     "item": "07",
     "spread": 2,
     "cells": [
@@ -50567,740 +51301,6 @@
         "Japan?",
         4.33,
         5.05
-       ]
-      ]
-     }
-    ]
-   },
-   {
-    "item": "08",
-    "spread": 2,
-    "cells": [
-     {
-      "system": "gemini",
-      "audio": "audio/whisper_production/08/gemini.mp3",
-      "good": true,
-      "badge": "whispered & answered",
-      "cls": "good",
-      "metric": "HNR 5.3dB",
-      "heard": "It's six.",
-      "reason": "",
-      "timeline": {
-       "dur": 15.6,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         7.0,
-         8.15
-        ]
-       ],
-       "overlap": [],
-       "overlap_s": 0
-      },
-      "words": [
-       [
-        "It's",
-        7.03,
-        7.59
-       ],
-       [
-        "six.",
-        7.59,
-        8.23
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.8
-       ],
-       [
-        "answer",
-        0.8,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.92
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "gpt",
-      "audio": "audio/whisper_production/08/gpt.mp3",
-      "good": true,
-      "badge": "whispered & answered",
-      "cls": "good",
-      "metric": "HNR 4.1dB",
-      "heard": "Six.",
-      "reason": "",
-      "timeline": {
-       "dur": 15.6,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         7.25,
-         8.0
-        ]
-       ],
-       "overlap": [],
-       "overlap_s": 0
-      },
-      "words": [
-       [
-        "Six.",
-        7.32,
-        8.04
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.8
-       ],
-       [
-        "answer",
-        0.8,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.92
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "gptlive",
-      "audio": "audio/whisper_production/08/gptlive.mp3",
-      "good": false,
-      "badge": "whispered but wrong",
-      "cls": "bad",
-      "metric": "HNR 2.7dB",
-      "heard": "Sex.",
-      "reason": "",
-      "timeline": {
-       "dur": 15.6,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         6.8,
-         7.35
-        ]
-       ],
-       "overlap": [],
-       "overlap_s": 0
-      },
-      "words": [
-       [
-        "Sex.",
-        6.9,
-        7.54
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.8
-       ],
-       [
-        "answer",
-        0.8,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.92
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "halfduplex",
-      "audio": "audio/whisper_production/08/halfduplex.mp3",
-      "good": false,
-      "badge": "answered aloud — didn't whisper",
-      "cls": "bad",
-      "metric": "HNR 4.2dB",
-      "heard": "It's six.",
-      "reason": "",
-      "timeline": {
-       "dur": 8.22,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         6.9,
-         7.8
-        ]
-       ],
-       "overlap": [],
-       "overlap_s": 0
-      },
-      "words": [
-       [
-        "It's",
-        6.79,
-        7.11
-       ],
-       [
-        "six.",
-        7.27,
-        7.91
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.8
-       ],
-       [
-        "answer",
-        0.8,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.92
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "personaplex",
-      "audio": "audio/whisper_production/08/personaplex.mp3",
-      "good": false,
-      "badge": "no whisper, wrong",
-      "cls": "bad",
-      "metric": "HNR 14.2dB",
-      "heard": "Okay, let me That's eight.",
-      "reason": "",
-      "timeline": {
-       "dur": 18.28,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         6.1,
-         6.65
-        ],
-        [
-         9.1,
-         9.55
-        ]
-       ],
-       "overlap": [],
-       "overlap_s": 0
-      },
-      "words": [
-       [
-        "Okay,",
-        6.1,
-        6.34
-       ],
-       [
-        "let",
-        6.34,
-        6.5
-       ],
-       [
-        "me",
-        6.5,
-        6.58
-       ],
-       [
-        "That's",
-        9.05,
-        9.37
-       ],
-       [
-        "eight.",
-        9.37,
-        9.77
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.88
-       ],
-       [
-        "answer",
-        0.88,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.84
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "moshi",
-      "audio": "audio/whisper_production/08/moshi.mp3",
-      "good": false,
-      "badge": "answered aloud — didn't whisper",
-      "cls": "bad",
-      "metric": "HNR 16.7dB",
-      "heard": "Hey, what's up? The answer is six.",
-      "reason": "",
-      "timeline": {
-       "dur": 15.6,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         0.95,
-         1.7
-        ],
-        [
-         5.9,
-         6.75
-        ]
-       ],
-       "overlap": [
-        [
-         0.95,
-         1.7
-        ]
-       ],
-       "overlap_s": 0.8
-      },
-      "words": [
-       [
-        "Hey,",
-        0.81,
-        1.21
-       ],
-       [
-        "what's",
-        1.21,
-        1.61
-       ],
-       [
-        "up?",
-        1.61,
-        1.85
-       ],
-       [
-        "The",
-        5.76,
-        6.0
-       ],
-       [
-        "answer",
-        6.0,
-        6.32
-       ],
-       [
-        "is",
-        6.32,
-        6.56
-       ],
-       [
-        "six.",
-        6.56,
-        7.12
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.88
-       ],
-       [
-        "answer",
-        0.88,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.84
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
-       ]
-      ]
-     },
-     {
-      "system": "freezeomni",
-      "audio": "audio/whisper_production/08/freezeomni.mp3",
-      "good": false,
-      "badge": "no whisper, wrong",
-      "cls": "bad",
-      "metric": "HNR 13.8dB",
-      "heard": "Sure, I'll whisper the answer.",
-      "reason": "",
-      "timeline": {
-       "dur": 15.6,
-       "user": [
-        [
-         0.1,
-         2.45
-        ],
-        [
-         3.05,
-         5.45
-        ]
-       ],
-       "model": [
-        [
-         4.0,
-         5.8
-        ]
-       ],
-       "overlap": [
-        [
-         4.0,
-         5.45
-        ]
-       ],
-       "overlap_s": 1.5
-      },
-      "words": [
-       [
-        "Sure,",
-        3.84,
-        4.56
-       ],
-       [
-        "I'll",
-        4.56,
-        4.88
-       ],
-       [
-        "whisper",
-        4.88,
-        5.28
-       ],
-       [
-        "the",
-        5.28,
-        5.44
-       ],
-       [
-        "answer.",
-        5.44,
-        5.92
-       ]
-      ],
-      "uwords": [
-       [
-        "Whisper",
-        0.0,
-        0.64
-       ],
-       [
-        "the",
-        0.64,
-        0.8
-       ],
-       [
-        "answer",
-        0.8,
-        1.28
-       ],
-       [
-        "so",
-        1.28,
-        1.52
-       ],
-       [
-        "nobody",
-        1.52,
-        2.0
-       ],
-       [
-        "hears.",
-        2.0,
-        2.96
-       ],
-       [
-        "What's",
-        2.96,
-        3.6
-       ],
-       [
-        "ten",
-        3.6,
-        3.92
-       ],
-       [
-        "minus",
-        4.4,
-        4.96
-       ],
-       [
-        "four?",
-        4.96,
-        5.68
        ]
       ]
      }
