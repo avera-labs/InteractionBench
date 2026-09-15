@@ -329,7 +329,8 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     during a monologue, started speaking in a mid-sentence pause, or was knocked off its answer by a user
     backchannel (lower is intended). <b>Turn latency</b>: median time to begin a reply after the user stops.
     <b>Yield &amp; answer</b>: the rate at which the system, caught mid-speech, stopped and addressed an
-    interruption (higher is intended).</p>
+    interruption (higher is intended). <b>Timing score</b>: the share of all timing items passed across the
+    five scenarios; rows are sorted by it.</p>
   <div class="tbl-wrap"><table id="lb-behav"></table></div>
   <p class="small muted">Two caveats apply to GPT-Live's pause figure. Barge-in counts any vocalisation in the
     pause, a backchannel included: GPT-Live speaks in 28 of 30 pauses, and in 8 of them it says only a backchannel or continuer, such as “Mm-hmm” or “Yeah, go on.” It is also the only system whose audio is placed on the server's session clock
@@ -521,10 +522,11 @@ function buildBoard(M){
     const rows = M.systems.map(s => ({id:s.id, label:s.label, pr:(lb[s.id]||{}).pass_rate}))
       .filter(r => r.pr != null).sort((a,b) => b.pr - a.pr);
     if(!rows.length) return "";
-    const body = rows.map((r,i) => {
+    const body = rows.map(r => {
       const col = r.pr>=0.7 ? "var(--good)" : r.pr>=0.4 ? "var(--warn)" : "var(--bad)";
-      return `<div class="brow${i===0?" top1":""}">
-        <span class="brank">${i<3?MEDAL[i]:i+1}</span>
+      const rank = 1 + rows.filter(o => o.pr > r.pr + 1e-9).length;   // tied systems share a rank
+      return `<div class="brow${rank===1&&r.pr>0?" top1":""}">
+        <span class="brank">${rank<=3&&r.pr>0?MEDAL[rank-1]:rank}</span>
         <span class="bsys"><span class="dot" style="background:${SYS_COLOR[r.id]}"></span>${r.label}</span>
         <span class="bpct" style="color:${col}">${Math.round(r.pr*100)}%</span></div>`;
     }).join("");
@@ -585,10 +587,11 @@ function buildBehav(M){
     if(!vals.length) return null;
     return c.hi?Math.max(...vals):Math.min(...vals);
   });
-  // overall timing score = items handled well across the five timing scenarios
+  // overall timing score = share of items handled well across the five timing scenarios;
+  // systems have 132-140 graded timing items, so rank by the share, not the raw count
   const TT=M.timing_totals||{}; const tt=s=>(TT[s]||{}).good||0; const tn=s=>(TT[s]||{}).n||0;
-  const Nt=Math.max(...M.systems.map(s=>tn(s.id))), maxTt=Math.max(...M.systems.map(s=>tt(s.id)));
-  const rows=[...M.systems].sort((a,b)=>tt(b.id)-tt(a.id));
+  const rate=s=>tn(s)?tt(s)/tn(s):0, maxRate=Math.max(...M.systems.map(s=>rate(s.id)));
+  const rows=[...M.systems].sort((a,b)=>rate(b.id)-rate(a.id));
   let h="<thead><tr><th>System</th>"+COLS.map(c=>`<th class=num>${c.label}</th>`).join("")+
     `<th class=num>Timing score ▲</th></tr></thead><tbody>`;
   rows.forEach(s=>{
@@ -598,9 +601,9 @@ function buildBehav(M){
       const isBest = v!=null && best[i]!=null && Math.abs(v-best[i])<1e-9;
       h+=`<td class=num${isBest?' style="color:var(--good);font-weight:700"':''}>${c.fmt(v)}</td>`;
     });
-    const g=tt(s.id), n=tn(s.id);
-    h+=`<td class=num><b class="${g===maxTt?'rank1':''}">${g}</b><span class=small muted> / ${n}</span>`+
-       `<span class=bar style="width:${Nt?44*g/Nt:0}px"></span></td></tr>`;
+    const g=tt(s.id), n=tn(s.id), r=rate(s.id);
+    h+=`<td class=num><b class="${r===maxRate?'rank1':''}">${Math.round(100*r)}%</b><span class=small muted> ${g} / ${n}</span>`+
+       `<span class=bar style="width:${44*r}px"></span></td></tr>`;
   });
   document.getElementById("lb-behav").innerHTML=h+"</tbody>";
 }
