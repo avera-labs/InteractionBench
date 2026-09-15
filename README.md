@@ -8,15 +8,17 @@ InteractionBench evaluates full-duplex spoken-dialogue models on what actually m
 
 ## Systems evaluated
 
-| id | system |
-|---|---|
-| `gptlive` | GPT-Live-1 |
-| `gpt` | GPT-Realtime |
-| `gemini` | Gemini-Live |
-| `moshi` | Moshi (Kyutai) |
-| `personaplex` | PersonaPlex |
-| `freezeomni` | FreezeOmni |
-| `halfduplex` | Turn-based cascade (VAD + STT + LLM + TTS baseline) |
+| id | system | model / checkpoint |
+|---|---|---|
+| `gptlive` | GPT-Live-1 | `gpt-live-1`, deep reasoning delegated to `gpt-5.5` |
+| `gpt` | GPT-Realtime | `gpt-realtime-2.1` |
+| `gemini` | Gemini-Live | `gemini-3.1-flash-live-preview` |
+| `moshi` | Moshi (Kyutai) | [`kyutai/moshika-pytorch-bf16`](https://huggingface.co/kyutai/moshika-pytorch-bf16) at `a49141e` |
+| `personaplex` | PersonaPlex | [`nvidia/personaplex-7b-v1`](https://huggingface.co/nvidia/personaplex-7b-v1) at `fdaf409`, voice prompt `NATF0` |
+| `freezeomni` | FreezeOmni | [`VITA-MLLM/Freeze-Omni`](https://huggingface.co/VITA-MLLM/Freeze-Omni) at `c8b1918` with [`Qwen/Qwen2-7B-Instruct`](https://huggingface.co/Qwen/Qwen2-7B-Instruct) at `f2826a0` |
+| `halfduplex` | Turn-based cascade (VAD + STT + LLM + TTS baseline) | WebRTC VAD endpointing, Parakeet TDT 0.6B v3, `gpt-4o-mini`, MiMo TTS |
+
+Moshi, PersonaPlex, and FreezeOmni were self-hosted; revisions are abbreviated Hugging Face commit hashes. Recordings were made between 17 and 31 August 2026, except GPT-Live, which was recorded on 11 September 2026.
 
 ## Dimensions
 

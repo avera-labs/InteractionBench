@@ -49,6 +49,9 @@ p{margin:.6em 0}
 .tbl-wrap{overflow-x:auto;margin:.6em 0}
 table{border-collapse:collapse;width:100%;font-size:14.5px}
 th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.sys-table{min-width:680px}
+.sys-table td{white-space:normal;vertical-align:top}
+.sys-table td:first-child{white-space:nowrap;font-weight:600}
 thead th{font-weight:600;color:var(--muted);font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;border-bottom:2px solid var(--line)}
 tbody tr:hover{background:var(--panel)}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
@@ -491,6 +494,22 @@ expected_overlap: required           target_response : "I have been to Paris."</
     alignment, played back live — the transcript lights up in lock-step with the audio.</p>
   <p class="small muted">The turn-based cascade is run offline with the same building blocks
     (voice-activity endpointing → Parakeet ASR → gpt-4o-mini → MiMo TTS) and scored by the same harness.</p>
+
+  <h3>4 · Systems and checkpoints</h3>
+  <div class="tbl-wrap"><table class="sys-table">
+    <thead><tr><th>System</th><th>Model / checkpoint</th><th>Access</th><th>Timing reference</th></tr></thead>
+    <tbody>
+      <tr><td>GPT-Live</td><td><code>gpt-live-1</code>, deep reasoning delegated to <code>gpt-5.5</code></td><td>OpenAI Live API, WebSocket, PCM</td><td>session clock</td></tr>
+      <tr><td>GPT-Realtime</td><td><code>gpt-realtime-2.1</code></td><td>OpenAI Realtime API, WebSocket, PCM; server VAD with 500&nbsp;ms silence</td><td>arrival</td></tr>
+      <tr><td>Gemini Live</td><td><code>gemini-3.1-flash-live-preview</code></td><td>Gemini Live API, PCM; automatic activity detection</td><td>arrival</td></tr>
+      <tr><td>Moshi</td><td><a href="https://huggingface.co/kyutai/moshika-pytorch-bf16"><code>kyutai/moshika-pytorch-bf16</code></a> at <code>a49141e</code></td><td>self-hosted, WebSocket, Opus</td><td>arrival</td></tr>
+      <tr><td>PersonaPlex</td><td><a href="https://huggingface.co/nvidia/personaplex-7b-v1"><code>nvidia/personaplex-7b-v1</code></a> at <code>fdaf409</code>; voice prompt <code>NATF0</code></td><td>self-hosted, WebSocket, Opus</td><td>arrival</td></tr>
+      <tr><td>Freeze-Omni</td><td><a href="https://huggingface.co/VITA-MLLM/Freeze-Omni"><code>VITA-MLLM/Freeze-Omni</code></a> at <code>c8b1918</code> with <a href="https://huggingface.co/Qwen/Qwen2-7B-Instruct"><code>Qwen/Qwen2-7B-Instruct</code></a> at <code>f2826a0</code></td><td>self-hosted, socket.io, PCM</td><td>arrival</td></tr>
+      <tr><td>Turn-based cascade</td><td>WebRTC VAD endpointing, Parakeet TDT 0.6B v3, <code>gpt-4o-mini</code>, MiMo TTS</td><td>offline simulation</td><td>simulated</td></tr>
+    </tbody>
+  </table></div>
+  <p class="small muted">Revisions are abbreviated Hugging Face commit hashes. Recordings were made between 17 and 31 August 2026,
+    except GPT-Live, which was recorded on 11 September 2026.</p>
 </div></section>
 
 <!-- LIMITATIONS -->
@@ -503,7 +522,7 @@ expected_overlap: required           target_response : "I have been to Paris."</
     <li><b>Two timing clocks.</b> GPT-Live's audio is placed on the server's session clock; every other system's is placed at the moment it arrived, which for the hosted APIs includes the network round trip. Timing comparisons between GPT-Live and the other hosted systems are not like-for-like.</li>
     <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor — stricter than Full-Duplex-Bench. Under a backchannel-tolerant rule GPT-Live's pause score would be 0.33 rather than 0.07; no other system's score changes.</li>
     <li><b>Text instructions differ across systems.</b> The three hosted systems received an instruction with a grammar-correction clause in every scenario; the open models and the cascade received different instructions, and Moshi none.</li>
-    <li>The next user turn is released after 1.5 s of silence or 14 s, which sometimes lands on a system that is still speaking — in the long conversations, on 26% of Gemini Live's turns, 17% of GPT-Live's, and 15% of Freeze-Omni's.</li>
+    <li>The next user turn is released after 1.5 s of silence or 14 s, which sometimes starts it while a system is still speaking, most often for Gemini Live. In the long conversations, probes that start this way fail more often only for GPT-Live; counting its four such failures as passes would raise its groundedness score from 44 to 48 of 52.</li>
     <li>Semantic decisions are made by Gemini 2.5 Flash without a measured agreement with human raters; it belongs to the same model family as one evaluated system and also generated the groundedness conversations.</li>
     <li>Thirteen of the 52 groundedness probes presuppose what the scripted assistant did, and have not been audited against what each system actually did.</li>
     <li>The whisper criterion (harmonics-to-noise ratio below 6 dB, voiced fraction below 0.4) has not been validated on labelled whispered speech.</li>
