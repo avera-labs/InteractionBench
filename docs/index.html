@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>InteractionBench — Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems</title>
+<title>InteractionBench: Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opt@0,6..72;1,6..72&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -211,41 +211,28 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <a class="pill" href="https://github.com/avera-labs">▹ Code &amp; data</a>
     <a class="pill" href="#samples">▹ Listen to samples</a>
   </div>
-  <div class="orgline">Richard Yucheng He · Chen Xu · Yihang Liu · Tairan Chen — AveraLabs, 2026</div>
+  <div class="orgline">Richard Yucheng He · Chen Xu · Yihang Liu · Tairan Chen · AveraLabs, 2026</div>
 </div></header>
 
 <!-- OVERVIEW -->
 <section id="overview"><div class="wrap">
   <div class="eyebrow">Overview</div>
-  <h2>When a system speaks is part of the answer</h2>
-  <p class="lead">In a spoken conversation, the moment a system chooses to speak carries meaning of its own.
-    A pause is not necessarily the end of a turn. “Uh-huh” usually signals attention rather than a new
-    request. An interruption can replace the request the system was in the middle of answering. And a
-    correct answer delivered at the wrong moment still makes for a poor interaction.</p>
-  <p class="muted">Conversational benchmarks tend to measure interaction; task benchmarks tend to measure
-    whether the answer was correct. A real-time voice system has to manage both at once, and the two can
-    come apart — a system that handles turns gracefully may still answer poorly, and a system that answers
-    well may misread the user's timing. InteractionBench measures conversational timing, spoken-task accuracy,
-    paralinguistic control, and groundedness over long conversations, using the same recorded user audio and
-    the same graders across every system, and reports the four dimensions separately so they can be read on
-    their own terms.</p>
+  <h2>What InteractionBench measures</h2>
+  <p class="lead">Full-duplex voice systems listen while they speak, so they have to decide when to speak as well as what to say. They must wait through pauses inside a user's sentence, keep answering through short backchannels such as “uh-huh”, and switch to a new request when the user interrupts.</p>
+  <p class="muted">Benchmarks for these systems usually evaluate one aspect at a time, such as turn-taking, instruction following, paralinguistic control, or conversational memory, each with its own data and systems. InteractionBench measures conversational timing, spoken-task accuracy, paralinguistic control, and groundedness in long conversations on the same seven systems, with the same recorded user audio and the same graders. The four dimensions are reported separately.</p>
 </div></section>
 
 <!-- EVALUATION DESIGN -->
 <section id="design"><div class="wrap">
   <div class="eyebrow">Evaluation design</div>
   <h2>Design choices</h2>
-  <p class="muted">Four choices shape what the results can and cannot show.</p>
+  <p class="muted">The benchmark is built around four design choices.</p>
   <ul class="mlist">
-    <li><b>The four dimensions are reported separately</b> — combining them into one score would hide
+    <li><b>The four dimensions are reported separately</b>, because a single combined score would hide
       systems that do well on one dimension and poorly on another.</li>
-    <li><b>The same recorded user audio drives every system.</b> Two things are not identical across systems
-      and are reported rather than hidden: the text instruction each system accepts, and, on multi-turn
-      items, the moment the next user turn is released (see Limitations).</li>
-    <li><b>A turn-based cascade supplies an architecture reference</b>, which lets a timing failure be
-      attributed to endpointing rather than to the language model that produced the answer.</li>
-    <li><b>Every item stays inspectable</b> — the audio, transcripts, two-track timeline, and the grader's
-      explanation are all available per item in the section below.</li>
+    <li><b>Every system receives the same recorded user audio.</b> The text instruction and, on multi-turn items, the moment the next user turn is released differ across systems (see Limitations).</li>
+    <li><b>A turn-based cascade serves as an architectural reference.</b> Its language model handles the spoken tasks well, so its timing failures can be attributed to endpointing.</li>
+    <li><b>Every run can be inspected.</b> Its audio, transcripts, two-track timeline, and grader explanation are kept, and the Listen section below plays examples.</li>
   </ul>
 </div></section>
 
@@ -253,11 +240,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="scenarios"><div class="wrap">
   <div class="eyebrow">Scenarios</div>
   <h2>Thirteen scenarios</h2>
-  <p class="muted">Five scenarios test conversational timing; five test spoken-task accuracy — two of which
-    also demand <b>restraint</b> (staying quiet until the right moment); two test <b>paralinguistic
-    control</b> — whispering on request and understanding volume; and one tests <b>groundedness</b> across
-    ten conversations of more than twenty turns (described with its results below). Each scenario below states
-    what happens, what a successful system does, and what to listen for in the samples.</p>
+  <p class="muted">Five scenarios test conversational timing and five test spoken-task accuracy, two of which also require <b>restraint</b>, staying quiet until a cue. Two scenarios test <b>paralinguistic control</b>, whispering on request and responding to volume, and one tests <b>groundedness</b> in ten conversations of more than twenty turns, described with its results below. Each card states what happens, what a successful system does, and what to listen for in the samples.</p>
   <div class="taskfam">
     <div class="taskcol"><h3>Conversational timing</h3>
       <div class="scen"><div class="name">Backchannel</div>
@@ -273,8 +256,8 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
         <div class="r"><b>Expected:</b> the system begins its answer promptly, without a long delay or a false start.</div>
         <div class="r"><b>Listen for:</b> a clean start about a second after the user stops, not overlapping their last words.</div></div>
       <div class="scen"><div class="name">User backchannel</div>
-        <div class="r"><b>Scenario:</b> the user drops a short backchannel — “mhm,” “right,” “ok,” “uh-huh” — while the system is speaking.</div>
-        <div class="r"><b>Expected:</b> the system continues its answer, treating the token as attention rather than a new instruction.</div>
+        <div class="r"><b>Scenario:</b> the user says a short backchannel such as “mhm,” “right,” “ok,” or “uh-huh” while the system is speaking.</div>
+        <div class="r"><b>Expected:</b> the system continues its answer, treating the backchannel as a sign of attention, not a new instruction.</div>
         <div class="r"><b>Listen for:</b> the system keeps its thread and does not restart, stop, or change topic.</div></div>
       <div class="scen"><div class="name">Interruption</div>
         <div class="r"><b>Scenario:</b> the user cuts in mid-reply with a different request.</div>
@@ -286,7 +269,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
         <div class="r"><b>Scenario:</b> the user asks a short reasoning or arithmetic question aloud.</div>
         <div class="r"><b>Expected:</b> the spoken answer states the correct value.</div>
         <div class="r"><b>Listen for:</b> the specific answer (for example, “48”), not a restatement of the question.</div>
-        <div class="r"><b>Variant — alternating count:</b> the user and system trade numbers, one each (user 1, system 2, user 3, …). The system must add only its own number in turn, not recite the whole sequence. Shown under Logic puzzle in the samples.</div></div>
+        <div class="r"><b>Variant, alternating count:</b> the user and system trade numbers, one each (user 1, system 2, user 3, …). The system must add only its own number in turn, not recite the whole sequence. Shown under Logic puzzle in the samples.</div></div>
       <div class="scen"><div class="name">Countdown completion</div>
         <div class="r"><b>Scenario:</b> the user asks the system to count down and finish on an agreed cue.</div>
         <div class="r"><b>Expected:</b> the system counts down in order and says the cue word.</div>
@@ -294,25 +277,25 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
       <div class="scen"><div class="name">Grammar repair</div>
         <div class="r"><b>Scenario:</b> the user makes a grammatical error mid-sentence, spoken in varied non-native accents.</div>
         <div class="r"><b>Expected:</b> the system corrects it at the moment it occurs, while the user is still speaking.</div>
-        <div class="r"><b>Listen for:</b> a correction that lands on the error word rather than after the user finishes.</div></div>
+        <div class="r"><b>Listen for:</b> a correction that starts right after the error, while the user is still speaking.</div></div>
       <div class="scen"><div class="name">Keyword wait <span class="small muted">· restraint</span></div>
         <div class="r"><b>Scenario:</b> the user reads a list of words and asks the system to speak up only when it hears a target word.</div>
-        <div class="r"><b>Expected:</b> the system stays quiet through the list, then interjects the target word when it appears.</div>
-        <div class="r"><b>Listen for:</b> whether the system takes the floor on the right word — and only then, not on every item.</div></div>
+        <div class="r"><b>Expected:</b> the system stays quiet through the list, then responds after the target word with the requested content.</div>
+        <div class="r"><b>Listen for:</b> whether the system stays quiet through the other words and speaks only after the target word.</div></div>
       <div class="scen"><div class="name">Stay quiet until asked <span class="small muted">· restraint</span></div>
         <div class="r"><b>Scenario:</b> the user thinks out loud, working through a problem, and only later explicitly asks for help.</div>
         <div class="r"><b>Expected:</b> the system holds back while the user reasons, then answers correctly once asked.</div>
         <div class="r"><b>Listen for:</b> silence during the thinking-aloud, then the right answer after the request.</div></div>
-      <div class="scen" style="border:none"><div class="r">Each accuracy item is a multi-turn exchange (the user speaks, the system replies, and so on). The system's spoken response is transcribed and checked against a supplied target — the right answer, the right interjection, or waiting quietly and then answering.</div></div>
+      <div class="scen" style="border:none"><div class="r">Most accuracy items are multi-turn exchanges. The system's spoken response is checked against a target: the right answer, the right interjection, or silence followed by the right answer.</div></div>
     </div>
     <div class="taskcol" style="grid-column:1/-1"><h3>Paralinguistic control <span class="small muted">· volume &amp; whisper</span></h3>
       <div class="scen"><div class="name">Whisper on request</div>
-        <div class="r"><b>Scenario:</b> the user asks the system to whisper its answer (“whisper it — what's seven times eight?”).</div>
-        <div class="r"><b>Expected:</b> the system answers correctly <i>and</i> in a genuine breathy whisper (voice, not just words).</div>
-        <div class="r"><b>Listen for:</b> a soft, airy, unvoiced delivery — not a normal-volume “okay, whispering.” Scored acoustically from the audio (harmonics-to-noise ratio &amp; voicing), so saying it doesn't count.</div></div>
+        <div class="r"><b>Scenario:</b> the user asks the system to whisper its answer (“whisper it: what's seven times eight?”).</div>
+        <div class="r"><b>Expected:</b> the system answers correctly and actually whispers.</div>
+        <div class="r"><b>Listen for:</b> a soft, unvoiced delivery, not a normal-volume reply that only says it is whispering. The whisper is scored from the audio signal, using harmonics-to-noise ratio and voicing.</div></div>
       <div class="scen" style="border:none"><div class="name">Volume understanding</div>
         <div class="r"><b>Scenario:</b> the user speaks very softly (a secret, a sleeping baby) or very loudly (noise, distance, urgency).</div>
-        <div class="r"><b>Expected:</b> an appropriate answer to the request; ideally the system also matches the volume (softens when whispered to).</div>
+        <div class="r"><b>Expected:</b> an answer that suits the request. We also report whether the system lowers its own voice when whispered to.</div>
         <div class="r"><b>Listen for:</b> whether the reply fits the situation, and whether its own loudness adapts to the user's.</div></div>
     </div>
   </div>
@@ -322,10 +305,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="board"><div class="wrap">
   <div class="eyebrow">Leaderboard</div>
   <h2>Per-task ranking</h2>
-  <p class="muted">Each card ranks all seven systems by the share of items they handled correctly on that task —
-    higher is better. Timing tasks (backchannel, pause, interruption, keyword-wait, grammar, stay-quiet) score
-    conversational behaviour; reasoning tasks (logic, countdown) score the spoken answer. Select a card to jump
-    to that task's audio examples below.</p>
+  <p class="muted">Each card ranks the seven systems by the share of items they passed on one task. Select a card to jump to that task's audio examples below.</p>
   <div id="board-root" class="board-grid"></div>
 </div></section>
 
@@ -333,24 +313,16 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="results"><div class="wrap">
   <div class="eyebrow">Results</div>
   <h2>Results</h2>
-  <p class="muted">The four dimensions — conversational timing, spoken-task accuracy, paralinguistic
-    control, and interaction groundedness — are reported in separate tables and are not combined into an
-    overall rank. Each figure is
-    measured over the items in its scenario, among the seven systems evaluated here.</p>
+  <p class="muted">Conversational timing, spoken-task accuracy, paralinguistic control, and interaction groundedness are reported in separate tables and are not combined into an overall rank.</p>
 
-  <h3>Spoken-task accuracy — items answered correctly, out of 50</h3>
+  <h3>Spoken-task accuracy: items answered correctly, out of 50</h3>
   <p class="small muted">Fifty spoken items per system, ten in each of five scenarios: logic questions,
     countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item
-    counts when the spoken response meets its scenario's target — the right answer, the right interjection,
-    or waiting quietly and then answering.</p>
+    counts when the spoken response meets its scenario's target: the right answer, the right interjection, or silence followed by the right answer.</p>
   <div class="tbl-wrap"><table id="lb-iq"></table></div>
-  <p class="small muted">The three hosted systems and the cascade answer 33–37 of 50 items and cannot be told
-    apart at this sample size; the open full-duplex models answer 3–14, and most of their loss is on the two
-    <b>restraint</b> scenarios (keyword-wait and stay-quiet), where always being able to speak becomes a
-    liability. No system completes a grammar-repair item — a correction within 50–300 ms of the error, while
-    the user is still speaking — which is discussed in the analysis.</p>
+  <p class="small muted">The three hosted systems and the cascade answer 33–37 of 50 items, and their confidence intervals overlap. The open full-duplex models answer 3–14. On the two <b>restraint</b> scenarios, keyword-wait and stay-quiet, the hosted systems and the cascade pass 14–19 of 20 items and the open models pass 0–6. No system passes a grammar-repair item, which requires a correction 50–300 ms after the error while the user is still speaking.</p>
 
-  <h3>Conversational timing — per-scenario metric</h3>
+  <h3>Conversational timing: one metric per scenario</h3>
   <p class="small muted">Each column reports one behaviour over that scenario's items; green marks the best
     value in a column. <b>Backchannel</b>: average brief acknowledgements per conversation (higher is the
     intended behaviour). <b>Floor-take / Barge-in / Derail</b>: the rate at which the system took the floor
@@ -359,46 +331,29 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <b>Yield &amp; answer</b>: the rate at which the system, caught mid-speech, stopped and addressed an
     interruption (higher is intended).</p>
   <div class="tbl-wrap"><table id="lb-behav"></table></div>
-  <p class="small muted">Two things qualify GPT-Live's pause figure. Barge-in counts any vocalisation in the
+  <p class="small muted">Two caveats apply to GPT-Live's pause figure. Barge-in counts any vocalisation in the
     pause, a backchannel included: GPT-Live speaks in 28 of 30 pauses, and in 8 of them it says only
     “Mm-hmm” or “Yeah, go on.” It is also the only system whose audio is placed on the server's session clock
-    rather than at arrival (see Limitations), so its timing figures are not like-for-like with the other
-    hosted systems.</p>
+    rather than at arrival (see Limitations), so its timing figures are not directly comparable with those of the other hosted systems.</p>
 
-  <h3>Paralinguistic control — whisper &amp; volume</h3>
-  <p class="small muted">Two voice-quality tests. <b>Whisper on request</b> (10 items): the user asks the
-    system to whisper its answer; a reply counts only if it is <b>acoustically a real whisper</b> — breathy,
-    unvoiced, low harmonics-to-noise ratio (HNR &lt; 6&nbsp;dB) and voiced fraction below 0.4 — judged from the audio, not from the model
-    merely <i>saying</i> it will whisper. <b>Volume understanding</b> (10 items, 5 whispered + 5 loud): does the
-    system give an appropriate answer to a user speaking very softly or very loudly. <b>Adapt</b> is the share of
-    the 5 whispered prompts on which the system also lowered its own voice in reply.</p>
+  <h3>Paralinguistic control: whisper and volume</h3>
+  <p class="small muted"><b>Whisper on request</b> (10 items): the user asks the system to whisper its answer. A reply counts as a whisper if its harmonics-to-noise ratio is below 6&nbsp;dB and its voiced fraction is below 0.4, measured from the audio. <b>Volume understanding</b> (10 items, 5 whispered and 5 shouted): the reply must suit a user who speaks very softly or very loudly. <b>Adapt</b> is the share of the 5 whispered requests on which the system also lowered its own voice.</p>
   <div class="tbl-wrap"><table id="lb-para"></table></div>
-  <p class="small muted">Whispering on request is the clearest divider: only one system reliably produces a genuine
-    breathy whisper (Gemini Live, 8 of 10); GPT-Live and GPT-Realtime manage 2 of 10, and the rest answer
-    aloud (or say “okay, whispering” without changing their voice). Volume
-    <i>understanding</i> is widespread, but <i>adapting</i> one's own volume to match the user is almost absent —
-    understanding a cue and acting on it come apart, as elsewhere in the benchmark.</p>
+  <p class="small muted">Gemini Live whispers on 8 of 10 requests, GPT-Live and GPT-Realtime on 2, and the other systems on none. Most systems give an appropriate answer to whispered or shouted requests, but only 2 of the 35 whispered requests received a quieter reply.</p>
 
-  <h3>Interaction groundedness — logic held across a long conversation</h3>
-  <p class="small muted">Ten multi-turn conversations (20+ turns each) quietly build real state — a list, a
-    plan, a game — then plant <b>probes</b> that test whether the system stays grounded: does it recall a value
-    it was told, track an update, admit what it was <i>not</i> told instead of inventing it, keep a constraint,
-    attribute who said what, refuse a false premise, and <b>flag a nonsense question</b> rather than fabricating
-    an answer. Each probe is graded from the transcript of what the system actually said; <b>Grounded</b> counts
-    probes answered correctly, and <b>Coherence</b> (0–100) rates how consistent the whole conversation stayed.</p>
+  <h3>Interaction groundedness in long conversations</h3>
+  <p class="small muted">Ten conversations of 22–24 turns build up state, such as a grocery list or a road trip. <b>Probes</b> then check whether the system recalls what it was told, tracks updates, says when information was never given, keeps constraints, attributes statements to the right speaker, rejects false premises, and <b>flags nonsense questions</b>. A judge grades each probe from a time-aligned transcript of the conversation. <b>Grounded</b> counts probes passed, and <b>Coherence</b> (0–100) rates the conversation as a whole.</p>
   <div class="tbl-wrap"><table id="lb-ig"></table></div>
   <p class="small muted">The hosted systems answer 35–45 of 52 probes and the open full-duplex models 7–19,
     with the cascade between them. Nonsense questions and questions about information the user never gave are
-    the hardest probe types. For Moshi and Freeze-Omni a large share of failures are missing replies rather than
-    wrong ones, and for GPT-Realtime most are, so this score mixes grounding with responsiveness.</p>
+    the hardest probe types. Many failures are missing replies, 13 for Moshi and 10 for Freeze-Omni, and 11 of GPT-Realtime's 17, so this score also reflects whether a system replies at all.</p>
 </div></section>
 
 <!-- SAMPLES -->
 <section id="samples"><div class="wrap">
   <div class="eyebrow">Listen</div>
-  <h2>Hear it for yourself</h2>
-  <p class="muted">The same recording is played to all seven systems; what differs between them is the text
-    instruction each received and the moment the next user turn was released (see Limitations). Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
+  <h2>Audio samples</h2>
+  <p class="muted">The same recording is played to all seven systems, although the text instruction and the moment the next user turn is released differ (see Limitations). Each clip is the <b>mixed conversation</b> (user and model together). The strip under each play
     button is a two-track timeline: <span style="color:var(--user);font-weight:600">user</span> on top,
     <span style="color:var(--model);font-weight:600">model</span> on the bottom, and
     <span style="color:var(--overlap);font-weight:600">red</span> where they talk over each other.
@@ -410,41 +365,32 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="analysis"><div class="wrap">
   <div class="eyebrow">Analysis</div>
   <h2>Analysis</h2>
-  <p class="muted">Each reading below is scoped to the seven systems and thirteen scenarios evaluated here. With
-    seven systems these are descriptive, and each should be read together with the limitations further down.</p>
+  <p class="muted">These observations cover only the seven systems and thirteen scenarios evaluated here, and should be read together with the limitations below.</p>
   <div class="finding"><div class="n">1</div><div>
-    <h3>Among full-duplex systems, timing and task accuracy rise together; the cascade inverts them</h3>
+    <h3>Timing and spoken-task accuracy</h3>
     <p class="muted">Across the six full-duplex systems, the timing aggregate and spoken-task accuracy have a
-      rank correlation of 0.89; with the cascade included it falls to 0.18. The cascade is perfect where
-      waiting for silence is enough — turn-taking 1.00, user backchannel 1.00 — and fails where it must act
-      during the user's speech — pause 0.00, backchannel 0.05, interruption 0.23 — while answering the most
-      spoken tasks (37 of 50). Earlier benchmarks reported this pattern one facet at a time; here it holds
-      with every facet measured on the same systems.</p></div></div>
+      rank correlation of 0.89; with the cascade included it falls to 0.18. The cascade passes every turn-taking and user-backchannel item but fails pauses (0.00), backchannels (0.05), and interruptions (0.23), and it answers the most spoken tasks (37 of 50). Earlier benchmarks reported related findings, and these results are consistent with them on a newer set of systems.</p></div></div>
   <div class="finding"><div class="n">2</div><div>
-    <h3>Speaking up proactively and holding back are both hard, for different systems</h3>
+    <h3>Restraint and proactive speech</h3>
     <p class="muted">No system corrects a grammar error within 50–300 ms of hearing it while the user is still
       speaking. On the two restraint scenarios, the hosted systems and the cascade pass 14–19 of 20 items; the
-      open full-duplex models pass 0–6. A system that is always able to speak has to decide not to.</p></div></div>
+      open full-duplex models pass 0–6.</p></div></div>
   <div class="finding"><div class="n">3</div><div>
-    <h3>Understanding a paralinguistic cue is not acting on it</h3>
+    <h3>Paralinguistic cues</h3>
     <p class="muted">Most systems respond appropriately to a whispered or shouted request, but only Gemini Live
       whispers on most explicit requests (8 of 10), and only 2 of the 35 whispered requests across all seven
       systems drew a reply in a lowered voice.</p></div></div>
   <div class="finding"><div class="n">4</div><div>
-    <h3>Groundedness separates hosted from open systems, most sharply on nonsense</h3>
+    <h3>Groundedness</h3>
     <p class="muted">The hosted systems flag 7–9 of 10 nonsense questions and reject 4–6 of 6 false accusations;
-      the open full-duplex models flag 0–2 and reject 0–1. These are the probes a fluent reply fails while
-      sounding reasonable.</p></div></div>
+      the open full-duplex models flag 0–2 and reject 0–1.</p></div></div>
 </div></section>
 
 <!-- METHOD -->
 <section id="method"><div class="wrap">
   <div class="eyebrow">Methodology</div>
   <h2>How an item is built and scored</h2>
-  <p class="muted">Two language models take part: one expands a seed card into dialogue, and one judges
-    spoken content against a target. What sits between them is derived by rule — the expected action, the
-    timing window, the overlap requirement, and the target answer are computed separately from the model
-    that wrote the dialogue, so the scorecard does not depend on the generator's own judgement.</p>
+  <p class="muted">Two language models are involved. One expands a seed card into a short dialogue, and the other judges spoken content against a target. The scorecard in between is derived by rule, so the expected action, timing window, overlap requirement, and target answer do not depend on the model that wrote the dialogue.</p>
   <div class="flow">
     <span class="step">seed card</span><span class="arrow">→(LLM)→</span>
     <span class="step">choreography</span><span class="arrow">→(rules)→</span>
@@ -458,42 +404,34 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 
   <h3>1 · Scripting the A→B→A→B exchange</h3>
   <p class="muted">An LLM (MiMo <code>mimo-v2.5-pro</code>) expands a one-line task <i>card</i>
-    (category + trigger + target) into a short <b>choreography</b> — an ordered list of user (A) and
+    (category + trigger + target) into a short <b>choreography</b>, an ordered list of user (A) and
     assistant (B) turns, each tagged with timing cues: <code>anchor</code> (the exact word in the other
     speaker's line the reply keys off), <code>ov</code> (how deep into that line the anchor sits, 0–1),
-    and <code>cut</code> (the reply barges in and truncates). These cues encode <i>when</i> a good
-    assistant should act — not just what to say.</p>
-  <div class="codeblock"><span class="k">choreography</span> — one B line (grammar repair)
+    and <code>cut</code> (the reply barges in and truncates). The cues mark when the assistant should act.</p>
+  <div class="codeblock"><span class="k">choreography</span>: one B line (grammar repair)
 {"speaker":"B", "text":"You mean 'I have been' to Paris.", "anchor":"went", "ov":0.5, "cut":true}</div>
 
   <h3>2 · Deriving the expected action and target answer</h3>
   <p class="muted">The scorecard <code>benchmark.json</code> is computed by rule from the category policy,
-    the seed card, and the choreography's anchor. The generator writes the lines, but the expected action
-    and target answer are set separately from it. Each graded event pins the expected floor-control action,
+    the seed card, and the choreography's anchor. Each graded event specifies the expected floor-control action,
     the onset window, whether overlap is required, and the target response:</p>
-  <div class="codeblock"><span class="k">benchmark.json</span> — grammar_correction · event e1
+  <div class="codeblock"><span class="k">benchmark.json</span>: grammar_correction · event e1
 expected_action : INTERRUPT          onset_window_ms : [50, 300]  (after "went")
 expected_overlap: required           target_response : "I have been to Paris."</div>
-  <p class="small muted">The eight floor-control actions a real-time system is scored against:
-    <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>.</p>
+  <p class="small muted">The category policy defines eight floor-control actions: <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>. Graded events in this release use TAKE_FLOOR and INTERRUPT.</p>
 
   <h3>3 · Aligning ASR to audio to score it</h3>
   <p class="muted">User turns are rendered with MiMo TTS (24&nbsp;kHz; one preset voice for most items, four voices with non-native accent directions for the grammar items) and streamed to each
-    live model; both sides are recorded to separate tracks. <b>Parakeet</b> gives word-level timestamps
-    and <b>WebRTC-VAD</b> gives speech boundaries — so we locate the trigger word in the user track and
-    the assistant's first word in its track to the tens of milliseconds. Four dimensions fall out:</p>
+    live model; both sides are recorded to separate tracks. <b>Parakeet</b> gives word-level timestamps and <b>WebRTC VAD</b> gives speech boundaries, which locate the trigger word in the user track and the start of the reply in the system track. Each graded event is checked on four points:</p>
   <ul class="mlist">
-    <li><b>Timing</b> — assistant's response onset minus the trigger-word end, checked against the window.</li>
-    <li><b>Overlap</b> — did the reply land while the user was still talking (<i>required</i>) or wait for a gap (<i>forbidden</i>).</li>
-    <li><b>Content</b> — Gemini checks the reply against the <b>known correct answer</b> with a per-category
-      rubric, and is told to <i>compare, not re-solve</i> — e.g. a logic puzzle passes only if the answer
-      actually states “48”. Spoken-task content is judged from the reply audio and its transcript against the target; timing scenarios judge the sliced audio.</li>
-    <li><b>Silence</b> — for wait-type tasks, did the model correctly stay quiet until the trigger.</li>
+    <li><b>Timing</b>: the reply onset minus the end of the trigger word, checked against the window.</li>
+    <li><b>Overlap</b>: whether the reply starts while the user is still talking (<i>required</i>) or waits for a gap (<i>forbidden</i>).</li>
+    <li><b>Content</b>: Gemini compares the reply with the known answer using a per-category rubric and is told not to solve the task itself. A logic item passes only if the reply states the target value, such as “48”. The judge receives the reply audio and its transcript.</li>
+    <li><b>Silence</b>: for wait-type tasks, whether the system stayed quiet until the cue.</li>
   </ul>
-  <p class="small muted">The word-by-word highlight under each sample above <i>is</i> that same Parakeet
-    alignment, played back live — the transcript lights up in lock-step with the audio.</p>
+  <p class="small muted">The word highlighting under each sample above uses the same Parakeet alignment.</p>
   <p class="small muted">The turn-based cascade is run offline with the same building blocks
-    (voice-activity endpointing → Parakeet ASR → gpt-4o-mini → MiMo TTS) and scored by the same harness.</p>
+    (voice-activity endpointing, Parakeet ASR, gpt-4o-mini, and MiMo TTS) and scored by the same harness.</p>
 
   <h3>4 · Systems and checkpoints</h3>
   <div class="tbl-wrap"><table class="sys-table">
@@ -516,11 +454,11 @@ expected_overlap: required           target_response : "I have been to Paris."</
 <section id="limitations"><div class="wrap">
   <div class="eyebrow">Limitations</div>
   <h2>Limitations</h2>
-  <p class="muted">These boundaries mark where the current evidence stops.</p>
+  <p class="muted">The results above are subject to the following limitations.</p>
   <ul class="mlist">
     <li>English only, with synthesized user speech from a few preset voices and no noise or channel effects. Scenarios have 10–30 items; the alternating-count variant has one.</li>
-    <li><b>Two timing clocks.</b> GPT-Live's audio is placed on the server's session clock; every other system's is placed at the moment it arrived, which for the hosted APIs includes the network round trip. Timing comparisons between GPT-Live and the other hosted systems are not like-for-like.</li>
-    <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor — stricter than Full-Duplex-Bench. Under a backchannel-tolerant rule GPT-Live's pause score would be 0.33 rather than 0.07; no other system's score changes.</li>
+    <li><b>Two timing clocks.</b> GPT-Live's audio is placed on the server's session clock; every other system's is placed at the moment it arrived, which for the hosted APIs includes the network round trip. GPT-Live's timing figures are therefore not directly comparable with those of the other hosted systems.</li>
+    <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor, which is stricter than Full-Duplex-Bench. Under a rule that allows backchannels, GPT-Live's pause score would be 0.33 instead of 0.07, and no other system's score would change.</li>
     <li><b>Text instructions differ across systems.</b> The three hosted systems received an instruction with a grammar-correction clause in every scenario; the open models and the cascade received different instructions, and Moshi none.</li>
     <li>The next user turn is released after 1.5 s of silence or 14 s, which sometimes starts it while a system is still speaking, most often for Gemini Live. In the long conversations, probes that start this way fail more often only for GPT-Live; counting its four such failures as passes would raise its groundedness score from 44 to 48 of 52.</li>
     <li>Semantic decisions are made by Gemini 2.5 Flash without a measured agreement with human raters; it belongs to the same model family as one evaluated system and also generated the groundedness conversations.</li>
@@ -613,7 +551,7 @@ function stopAll(except){ audios.forEach(a=>{ if(a!==except){a.pause();} }); }
 fetch("data/manifest.json",{cache:"no-store"}).then(r=>r.json()).then(M=>{
   buildBoard(M); buildIQ(M); buildBehav(M); buildPara(M); buildIG(M); buildSamples(M);
 }).catch(e=>{ document.getElementById("samples-root").innerHTML =
-  "<p class='muted'>Could not load data/manifest.json — run <code>build_site_data.py</code> and serve over http.</p>"; });
+  "<p class='muted'>Could not load data/manifest.json. Run <code>build_site_data.py</code> and serve over http.</p>"; });
 
 function sysLabel(M,id){ return (M.systems.find(s=>s.id===id)||{}).label||id; }
 
@@ -722,17 +660,17 @@ function buildIG(M){
 const SCEN_ONELINE = {
   backchannel:"The user speaks at length; listen for brief acknowledgements without the system taking the floor.",
   pause:"The user pauses mid-sentence; listen for whether the system waits or starts speaking in the gap.",
-  turn_taking:"The user finishes and stops; listen for a prompt, clean start.",
-  user_backchannel:"The user drops a short backchannel (“mhm,” “right,” “ok”) mid-answer; listen for whether the system keeps its thread.",
+  turn_taking:"The user finishes and stops; listen for whether the system starts promptly without overlapping the user.",
+  user_backchannel:"The user says a short backchannel such as “mhm,” “right,” or “ok” during the answer; listen for whether the system continues its answer.",
   interruption:"The user cuts in with a new request; listen for whether the system yields and addresses it.",
   logic_puzzle:"A spoken reasoning question; listen for the specific correct answer.",
   countdown_completion:"A countdown request; listen for the ordered count and the agreed cue word.",
-  grammar_correction:"The user makes an error mid-sentence, in varied non-native accents; listen for a correction placed on the error word.",
-  keyword_wait:"The user reads a list and asks the system to speak up on a target word; listen for whether it interjects the right word and only then.",
+  grammar_correction:"The user makes an error mid-sentence, in varied non-native accents; listen for a correction that starts right after the error, while the user is still speaking.",
+  keyword_wait:"The user reads a list and asks the system to speak up on a target word; listen for whether it stays quiet until the target word and then responds.",
   stay_quiet_until_help:"The user thinks out loud and only later asks for help; listen for whether the system stays quiet until asked, then answers correctly.",
-  whisper_production:"The user asks the system to whisper its answer; listen for whether the reply is a genuine breathy whisper — and still the right answer.",
-  volume_understanding:"The user speaks very softly (a secret) or very loudly (noise/urgency); listen for whether the system answers appropriately, and whether it matches the volume.",
-  interaction_groundedness:"A long conversation builds real state, then probes it — including nonsense questions; listen (and read the transcript) for whether the system stays grounded or invents a confident, ungrounded answer."};
+  whisper_production:"The user asks the system to whisper its answer; listen for whether the reply is an actual whisper and still gives the right answer.",
+  volume_understanding:"The user speaks very softly (a secret) or very loudly (noise/urgency); listen for whether the answer suits the request and whether the system lowers its voice when whispered to.",
+  interaction_groundedness:"A long conversation builds up state and then asks probe questions, including nonsense ones; listen and read the transcript for whether the system answers from the conversation or invents an answer."};
 
 /* ---- samples ---- */
 function buildSamples(M){
@@ -811,7 +749,7 @@ function cellRow(M,c){
         lab.textContent=tn.spk==="u"?"you":"model"; line.appendChild(lab);
         if(tn.silent){                                   // the model didn't speak this turn (keep the turn-by-turn rhythm)
           const s=document.createElement("span"); s.className="w";
-          s.style.opacity=".45"; s.style.fontStyle="italic"; s.textContent="— no reply —"; line.appendChild(s);
+          s.style.opacity=".45"; s.style.fontStyle="italic"; s.textContent="(no reply)"; line.appendChild(s);
         } else {
           tn.words.forEach(x=>{ const sp=document.createElement("span"); sp.className=tn.spk==="u"?"w wu":"w";
             sp.textContent=x.w+" "; line.appendChild(sp); flat.push({sp, t0:x.t0, t1:x.t1}); });

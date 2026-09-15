@@ -2,7 +2,7 @@
 
 **Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems.**
 
-InteractionBench evaluates full-duplex spoken-dialogue models on what actually makes a voice assistant feel present in a conversation — not just *what* it answers, but *when* it speaks, *how* it sounds, and whether it stays *grounded* across a long exchange. The same recordings are played to every system, so any difference in the result comes from the system.
+InteractionBench evaluates real-time voice systems on four dimensions: conversational timing, spoken-task accuracy, paralinguistic control, and groundedness in long conversations. Every system receives the same recorded user audio. The text instruction and the release of the next user turn on multi-turn items differ across systems, as described in the site's Limitations section.
 
 🔊 **Live site:** https://avera-labs.github.io/InteractionBench/
 
@@ -22,15 +22,15 @@ Moshi, PersonaPlex, and FreezeOmni were self-hosted; revisions are abbreviated H
 
 ## Dimensions
 
-The dimensions are reported in separate tables and are **not** collapsed into one overall rank — each measures something distinct.
+The dimensions are reported in separate tables and are not combined into one overall rank.
 
 1. **Spoken-task accuracy (reasoning).** Fifty spoken items per system across five scenarios: logic questions, countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item counts when the spoken response meets its scenario's target.
 
 2. **Conversational timing.** Per-scenario behaviour over live drills: backchannelling without grabbing the floor, waiting through a mid-sentence pause, prompt turn-taking latency, holding a thread through a user backchannel, and yielding-and-answering when interrupted.
 
-3. **Paralinguistic control.** Whisper-on-request (graded acoustically — real breathy whisper, HNR < 6 dB, not the model merely *saying* it will whisper) and volume understanding (answering appropriately to very soft / very loud speech, and adapting its own volume).
+3. **Paralinguistic control.** Whisper on request, scored from the audio (harmonics-to-noise ratio below 6 dB and voiced fraction below 0.4), and volume understanding (an appropriate answer to very soft or very loud speech, and whether the system lowers its own voice when whispered to).
 
-4. **Interaction groundedness (long multi-turn logic).** Ten 20+-turn conversations quietly build real state — a list, a plan, a game — then plant **probes** that test whether the system stays grounded: recalling a value it was told, tracking an update, admitting what it was *not* told instead of inventing it, keeping a constraint, attributing who-said-what, refusing a false premise, and **flagging a nonsense question** rather than fabricating an answer. Each probe is graded from the transcript of what the system actually said (an LLM judge over a time-aligned reconstruction), plus a 0–100 coherence score for the whole conversation.
+4. **Interaction groundedness (long multi-turn logic).** Ten conversations of 22–24 turns build up state, such as a grocery list or a road trip. Probes then check whether the system recalls what it was told, tracks updates, says when information was never given, keeps constraints, attributes statements to the right speaker, rejects false premises, and flags nonsense questions. An LLM judge grades each probe from a time-aligned transcript and gives the conversation a 0–100 coherence score.
 
 ## Repository layout
 
@@ -44,7 +44,7 @@ acoustics.py, compact_gaps.py, halfduplex.py, opus_encode.js …
 dashboard/                 # local live dashboard (real-time human ↔ model, relays to each system)
 interaction_groundedness/  # scenarios + generator + spec for the groundedness dimension
 docs/                      # the public GitHub Pages site (index.html + data/ + audio/)
-test_set/, tts_review/     # benchmark recordings & runs  (large — git-ignored, kept locally)
+test_set/, tts_review/     # benchmark recordings & runs  (large, git-ignored, kept locally)
 ```
 
 ## Setup & run
@@ -79,11 +79,11 @@ Each dimension has its own grader; they (re)score from the recorded tracks + ASR
 | dimension / category | grader |
 |---|---|
 | **Timing** (backchannel · pause · turn_taking · user_backchannel · interruption) | `uv run python grade.py <run-or-folder> --task <cat> --gemini` |
-| **Reasoning** — logic_puzzle · countdown_completion · grammar | `uv run python regrade_iq.py` |
-| **Reasoning** — keyword_wait | `uv run python regrade_keyword_wait.py [models…]` |
-| **Reasoning** — stay_quiet_until_help | `uv run python regrade_stay_quiet.py [models…]` |
-| **Turn-discipline** — alternating_count | `uv run python grade_alternating.py [models…]` |
-| **Paralinguistic** — whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
+| **Reasoning**: logic_puzzle · countdown_completion · grammar | `uv run python regrade_iq.py` |
+| **Reasoning**: keyword_wait | `uv run python regrade_keyword_wait.py [models…]` |
+| **Reasoning**: stay_quiet_until_help | `uv run python regrade_stay_quiet.py [models…]` |
+| **Turn-discipline**: alternating_count | `uv run python grade_alternating.py [models…]` |
+| **Paralinguistic**: whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
 | **Interaction groundedness** | `uv run python grade_interaction.py --model all` |
 
 `grade.py --list` shows available dashboard runs; omit `[models…]` to grade all seven systems. Every grader writes the standard `grade.json` (`summary.{n,npass,rate}` + per-event detail) that the site reads.
@@ -102,11 +102,11 @@ cd docs && python3 -m http.server 8791    # then open http://localhost:8791
 
 ## Generating scenarios & ground truth
 
-The **standard answer** for every item is a `benchmark.json` (the graded target — the right value/phrase, the trigger word, or the probe set), always produced by an LLM from a written dialogue and **never** hand-copied from a model's output. Per category:
+The standard answer for every item is a `benchmark.json` holding the graded target: the right value or phrase, the trigger word, or the probe set. It is generated from a written dialogue and is not copied from any system's output. Per category:
 
 | category | generator | how the ground truth is made |
 |---|---|---|
-| timing (5, behavioural) | `dashboard/gen_benchmark.py` | LLM turns a bare A/B dialogue into `benchmark.json` — one graded event anchored on a trigger word |
+| timing (5, behavioural) | `dashboard/gen_benchmark.py` | LLM turns a bare A/B dialogue into `benchmark.json` with one graded event anchored on a trigger word |
 | `keyword_wait` | `gen_keyword_wait.py` | scripted dialogue → `gen_benchmark` for the answer → MiMo TTS `A1/A2.wav` |
 | `stay_quiet_until_help` | `gen_stay_quiet.py` | same pattern (user thinks aloud, then asks for help) |
 | `grammar_correction` | `gen_grammar_correction.py` | re-TTS the grammar items in non-native accents; carries the existing standard answer |
@@ -127,7 +127,7 @@ uv run --extra dashboard python dashboard/server.py    # then open the printed U
 
 ## Data
 
-The raw recordings (`test_set/`, `tts_review/`, `dashboard/runs/`, and the per-dimension audio) are large and **not** committed — they stay local and are regenerated by the `gen_*` scripts and `headless_run.py`. The curated example clips shown on the public site live in `docs/audio/` and *are* committed.
+The raw recordings (`test_set/`, `tts_review/`, `dashboard/runs/`, and the per-dimension audio) are large and not committed. They stay local and can be regenerated with the `gen_*` scripts and `headless_run.py`. The example clips shown on the public site live in `docs/audio/` and are committed.
 
 📦 **Full test dataset:** the complete benchmark recordings are available on [Google Drive](https://drive.google.com/drive/folders/1C7huPcVMAiF8GFN6cg76in0dN8yYWk_w?usp=sharing). Download and unpack them into `test_set/` (and `tts_review/`) to reproduce the graded results without re-running the generators.
 

@@ -135,7 +135,7 @@ def eval_item(task, j):
         elif not ev.get("tor"):
             badge = "never corrected"
         elif lat is not None and lat > 300:            # only report seconds when clearly late
-            badge = f"waited {lat/1000:.1f}s — no interrupt"
+            badge = f"waited {lat/1000:.1f}s, no interrupt"
         else:
             badge = "no proactive correction"           # abnormal timing (negative / near-zero)
         return dict(good=good, badge=badge, cls="good" if good else "bad",
@@ -209,7 +209,7 @@ def eval_item(task, j):
         if good:
             badge = "whispered & answered"
         elif cok and not wok:
-            badge = "answered aloud — didn't whisper"
+            badge = "answered aloud, did not whisper"
         elif wok and not cok:
             badge = "whispered but wrong"
         else:
