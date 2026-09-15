@@ -240,7 +240,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="scenarios"><div class="wrap">
   <div class="eyebrow">Scenarios</div>
   <h2>Thirteen scenarios</h2>
-  <p class="muted">Five scenarios test conversational timing and five test spoken-task accuracy, two of which also require <b>restraint</b>, staying quiet until a cue. Two scenarios test <b>paralinguistic control</b>, whispering on request and responding to volume, and one tests <b>groundedness</b> in ten conversations of more than twenty turns, described with its results below. Each card states what happens, what a successful system does, and what to listen for in the samples.</p>
+  <p class="muted">Five scenarios test conversational timing and five test spoken-task accuracy, and one of these, stay-quiet, also requires <b>restraint</b>. Two scenarios test <b>paralinguistic control</b>, whispering on request and responding to volume, and one tests <b>groundedness</b> in ten conversations of more than twenty turns, described with its results below. Each card states what happens, what a successful system does, and what to listen for in the samples.</p>
   <div class="taskfam">
     <div class="taskcol"><h3>Conversational timing</h3>
       <div class="scen"><div class="name">Backchannel</div>
@@ -278,10 +278,10 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
         <div class="r"><b>Scenario:</b> the user makes a grammatical error mid-sentence, spoken in varied non-native accents.</div>
         <div class="r"><b>Expected:</b> the system corrects it at the moment it occurs, while the user is still speaking.</div>
         <div class="r"><b>Listen for:</b> a correction that starts right after the error, while the user is still speaking.</div></div>
-      <div class="scen"><div class="name">Keyword wait <span class="small muted">· restraint</span></div>
+      <div class="scen"><div class="name">Keyword wait</div>
         <div class="r"><b>Scenario:</b> the user reads a list of words and asks the system to speak up only when it hears a target word.</div>
-        <div class="r"><b>Expected:</b> the system stays quiet through the list, then responds after the target word with the requested content.</div>
-        <div class="r"><b>Listen for:</b> whether the system stays quiet through the other words and speaks only after the target word.</div></div>
+        <div class="r"><b>Expected:</b> the system responds after the target word with the requested content.</div>
+        <div class="r"><b>Listen for:</b> whether the system speaks up after the target word with the right content. The grader does not penalize speech earlier in the list.</div></div>
       <div class="scen"><div class="name">Stay quiet until asked <span class="small muted">· restraint</span></div>
         <div class="r"><b>Scenario:</b> the user thinks out loud, working through a problem, and only later explicitly asks for help.</div>
         <div class="r"><b>Expected:</b> the system holds back while the user reasons, then answers correctly once asked.</div>
@@ -320,7 +320,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item
     counts when the spoken response meets its scenario's target: the right answer, the right interjection, or silence followed by the right answer.</p>
   <div class="tbl-wrap"><table id="lb-iq"></table></div>
-  <p class="small muted">The three hosted systems and the cascade answer 33–37 of 50 items, and their confidence intervals overlap. The open full-duplex models answer 3–14. On the two <b>restraint</b> scenarios, keyword-wait and stay-quiet, the hosted systems and the cascade pass 14–19 of 20 items and the open models pass 0–6. No system passes a grammar-repair item, which requires a correction 50–300 ms after the error while the user is still speaking.</p>
+  <p class="small muted">The three hosted systems and the cascade answer 33–37 of 50 items, and their confidence intervals overlap. The open full-duplex models answer 3–14. On stay-quiet, which also requires <b>restraint</b>, the hosted systems and the cascade pass 6–10 of 10 items and the open models pass 0–1. No system passes a grammar-repair item, which requires a correction 50–300 ms after the error while the user is still speaking.</p>
 
   <h3>Conversational timing: one metric per scenario</h3>
   <p class="small muted">Each column reports one behaviour over that scenario's items; green marks the best
@@ -332,8 +332,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     interruption (higher is intended).</p>
   <div class="tbl-wrap"><table id="lb-behav"></table></div>
   <p class="small muted">Two caveats apply to GPT-Live's pause figure. Barge-in counts any vocalisation in the
-    pause, a backchannel included: GPT-Live speaks in 28 of 30 pauses, and in 8 of them it says only
-    “Mm-hmm” or “Yeah, go on.” It is also the only system whose audio is placed on the server's session clock
+    pause, a backchannel included: GPT-Live speaks in 28 of 30 pauses, and in 8 of them it says only a backchannel or continuer, such as “Mm-hmm” or “Yeah, go on.” It is also the only system whose audio is placed on the server's session clock
     rather than at arrival (see Limitations), so its timing figures are not directly comparable with those of the other hosted systems.</p>
 
   <h3>Paralinguistic control: whisper and volume</h3>
@@ -345,8 +344,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <p class="small muted">Ten conversations of 22–24 turns build up state, such as a grocery list or a road trip. <b>Probes</b> then check whether the system recalls what it was told, tracks updates, says when information was never given, keeps constraints, attributes statements to the right speaker, rejects false premises, and <b>flags nonsense questions</b>. A judge grades each probe from a time-aligned transcript of the conversation. <b>Grounded</b> counts probes passed, and <b>Coherence</b> (0–100) rates the conversation as a whole.</p>
   <div class="tbl-wrap"><table id="lb-ig"></table></div>
   <p class="small muted">The hosted systems answer 35–45 of 52 probes and the open full-duplex models 7–19,
-    with the cascade between them. Nonsense questions and questions about information the user never gave are
-    the hardest probe types. Many failures are missing replies, 13 for Moshi and 10 for Freeze-Omni, and 11 of GPT-Realtime's 17, so this score also reflects whether a system replies at all.</p>
+    with the cascade between them. The hardest probe types are questions about information the user never gave (42% of graded probes passed), about actions the system never took (47%), and nonsense questions (49%). Many failures are missing replies, 13 for Moshi and 10 for Freeze-Omni, and 11 of GPT-Realtime's 17, so this score also reflects whether a system replies at all.</p>
 </div></section>
 
 <!-- SAMPLES -->
@@ -373,8 +371,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <div class="finding"><div class="n">2</div><div>
     <h3>Restraint and proactive speech</h3>
     <p class="muted">No system corrects a grammar error within 50–300 ms of hearing it while the user is still
-      speaking. On the two restraint scenarios, the hosted systems and the cascade pass 14–19 of 20 items; the
-      open full-duplex models pass 0–6.</p></div></div>
+      speaking. On stay-quiet, which requires holding back until asked, the hosted systems and the cascade pass 6–10 of 10 items; the open full-duplex models pass 0–1.</p></div></div>
   <div class="finding"><div class="n">3</div><div>
     <h3>Paralinguistic cues</h3>
     <p class="muted">Most systems respond appropriately to a whispered or shouted request, but only Gemini Live
@@ -390,10 +387,10 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="method"><div class="wrap">
   <div class="eyebrow">Methodology</div>
   <h2>How an item is built and scored</h2>
-  <p class="muted">Two language models are involved. One expands a seed card into a short dialogue, and the other judges spoken content against a target. The scorecard in between is derived by rule, so the expected action, timing window, overlap requirement, and target answer do not depend on the model that wrote the dialogue.</p>
+  <p class="muted">Two language models are involved. One reads a scripted dialogue and marks the trigger word and the target answer, and the other judges spoken content against that target. The expected action, timing window, and overlap requirement come from a fixed category policy, and none of these depend on any system's output.</p>
   <div class="flow">
-    <span class="step">seed card</span><span class="arrow">→(LLM)→</span>
-    <span class="step">choreography</span><span class="arrow">→(rules)→</span>
+    <span class="step">scripted dialogue</span><span class="arrow">→(LLM)→</span>
+    <span class="step">trigger + target</span><span class="arrow">→(rules)→</span>
     <span class="step">benchmark.json</span><span class="arrow">→(TTS)→</span>
     <span class="step">user turns A1/A2</span><span class="arrow">→</span>
     <span class="step">live model</span><span class="arrow">→</span>
@@ -403,31 +400,26 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   </div>
 
   <h3>1 · Scripting the A→B→A→B exchange</h3>
-  <p class="muted">An LLM (MiMo <code>mimo-v2.5-pro</code>) expands a one-line task <i>card</i>
-    (category + trigger + target) into a short <b>choreography</b>, an ordered list of user (A) and
-    assistant (B) turns, each tagged with timing cues: <code>anchor</code> (the exact word in the other
-    speaker's line the reply keys off), <code>ov</code> (how deep into that line the anchor sits, 0–1),
-    and <code>cut</code> (the reply barges in and truncates). The cues mark when the assistant should act.</p>
-  <div class="codeblock"><span class="k">choreography</span>: one B line (grammar repair)
-{"speaker":"B", "text":"You mean 'I have been' to Paris.", "anchor":"went", "ov":0.5, "cut":true}</div>
+  <p class="muted">Each spoken-task item starts from a short scripted exchange of user (A) and assistant (B) lines. An LLM (MiMo <code>mimo-v2.5-pro</code>) reads it and returns the category, the <code>anchor_word</code> (the word in the user's line that the reply must react to), and the <code>target_response</code>, taken from the scripted assistant line.</p>
+  <div class="codeblock"><span class="k">annotation</span>: grammar repair, item 03
+{"category":"grammar_correction", "anchor_word":"went", "target_response":"I have been to Paris."}</div>
 
   <h3>2 · Deriving the expected action and target answer</h3>
-  <p class="muted">The scorecard <code>benchmark.json</code> is computed by rule from the category policy,
-    the seed card, and the choreography's anchor. Each graded event specifies the expected floor-control action,
+  <p class="muted">The scorecard <code>benchmark.json</code> is built by rule from the category policy and the annotated anchor and target. Each graded event specifies the expected floor-control action,
     the onset window, whether overlap is required, and the target response:</p>
   <div class="codeblock"><span class="k">benchmark.json</span>: grammar_correction · event e1
 expected_action : INTERRUPT          onset_window_ms : [50, 300]  (after "went")
 expected_overlap: required           target_response : "I have been to Paris."</div>
-  <p class="small muted">The category policy defines eight floor-control actions: <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>. Graded events in this release use TAKE_FLOOR and INTERRUPT.</p>
+  <p class="small muted">The category policy defines eight floor-control actions: <b>WAIT · BACKCHANNEL · TAKE_FLOOR · INTERRUPT · CONTINUE · YIELD · RESUME · ABORT</b>. Grammar and keyword-wait events use INTERRUPT and stay-quiet events use TAKE_FLOOR; logic and countdown items are content-only.</p>
 
   <h3>3 · Aligning ASR to audio to score it</h3>
   <p class="muted">User turns are rendered with MiMo TTS (24&nbsp;kHz; one preset voice for most items, four voices with non-native accent directions for the grammar items) and streamed to each
-    live model; both sides are recorded to separate tracks. <b>Parakeet</b> gives word-level timestamps and <b>WebRTC VAD</b> gives speech boundaries, which locate the trigger word in the user track and the start of the reply in the system track. Each graded event is checked on four points:</p>
+    live model; both sides are recorded to separate tracks. <b>WebRTC VAD</b> splits each track into speech segments and <b>Parakeet</b> transcribes them with word-level timestamps, which locate the trigger word and the start of the reply; VAD also refines where the user's words end. Each graded event is checked on four points:</p>
   <ul class="mlist">
     <li><b>Timing</b>: the reply onset minus the end of the trigger word, checked against the window.</li>
     <li><b>Overlap</b>: whether the reply starts while the user is still talking (<i>required</i>) or waits for a gap (<i>forbidden</i>).</li>
-    <li><b>Content</b>: Gemini compares the reply with the known answer using a per-category rubric and is told not to solve the task itself. A logic item passes only if the reply states the target value, such as “48”. The judge receives the reply audio and its transcript.</li>
-    <li><b>Silence</b>: for wait-type tasks, whether the system stayed quiet until the cue.</li>
+    <li><b>Content</b>: Gemini compares the reply with the known answer using a per-category rubric, and for logic items it is told not to re-solve the puzzle; a logic item passes only if the reply states the target value, such as “48”. Logic and countdown replies are judged from the transcript and grammar replies also from the audio. Keyword-wait replies were judged this way only for GPT-Live and most Freeze-Omni items, and by string match for the other systems.</li>
+    <li><b>Silence</b>: for stay-quiet items, whether the system stayed quiet until asked for help.</li>
   </ul>
   <p class="small muted">The word highlighting under each sample above uses the same Parakeet alignment.</p>
   <p class="small muted">The turn-based cascade is run offline with the same building blocks
@@ -456,9 +448,10 @@ expected_overlap: required           target_response : "I have been to Paris."</
   <h2>Limitations</h2>
   <p class="muted">The results above are subject to the following limitations.</p>
   <ul class="mlist">
-    <li>English only, with synthesized user speech from a few preset voices and no noise or channel effects. Scenarios have 10–30 items; the alternating-count variant has one.</li>
+    <li><b>Not every system has a graded run for every item.</b> Earlier runs of up to two items per timing scenario for Gemini Live, Moshi, PersonaPlex, and Freeze-Omni, recorded on 12 and 14 August, are not included, and three user-backchannel runs were never graded, so each system has 213–221 graded runs.</li>
+    <li><b>Some harness settings varied by system.</b> Interruptions reached GPT-Realtime, Gemini Live, and Freeze-Omni about 0.4–0.8 s into their replies but reached the other systems 1.6–4.1 s in. Keyword-wait was delivered as one segment only to GPT-Live, its content was judged by Gemini only for GPT-Live and most Freeze-Omni items, and its grader does not penalize speech before the keyword.</li>\n    <li>English only, with synthesized user speech from a few preset voices and no noise or channel effects. Scenarios have 10–30 items; the alternating-count variant has one.</li>
     <li><b>Two timing clocks.</b> GPT-Live's audio is placed on the server's session clock; every other system's is placed at the moment it arrived, which for the hosted APIs includes the network round trip. GPT-Live's timing figures are therefore not directly comparable with those of the other hosted systems.</li>
-    <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor, which is stricter than Full-Duplex-Bench. Under a rule that allows backchannels, GPT-Live's pause score would be 0.33 instead of 0.07, and no other system's score would change.</li>
+    <li><b>The pause rule counts any vocalisation</b>, a backchannel included, as taking the floor, which is stricter than Full-Duplex-Bench. Under a rule that allows backchannels and continuers such as “Go on”, GPT-Live's pause score would be 0.33 instead of 0.07, and no other system's score would change.</li>
     <li><b>Text instructions differ across systems.</b> The three hosted systems received an instruction with a grammar-correction clause in every scenario; the open models and the cascade received different instructions, and Moshi none.</li>
     <li>The next user turn is released after 1.5 s of silence or 14 s, which sometimes starts it while a system is still speaking, most often for Gemini Live. In the long conversations, probes that start this way fail more often only for GPT-Live; counting its four such failures as passes would raise its groundedness score from 44 to 48 of 52.</li>
     <li>Semantic decisions are made by Gemini 2.5 Flash without a measured agreement with human raters; it belongs to the same model family as one evaluated system and also generated the groundedness conversations.</li>
