@@ -159,6 +159,8 @@ code{background:var(--panel);padding:1px 6px;border-radius:5px;font-size:13px;fo
 .mlist{margin:.4em 0;padding-left:1.1em}
 .mlist li{margin:.3em 0;color:var(--muted)}
 .mlist b{color:var(--ink);font-family:Inter}
+.reflist{margin:.4em 0;padding-left:1.5em}
+.reflist li{margin:.45em 0;color:var(--muted);font-size:14.5px;line-height:1.5}
 
 footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center}
 .tocnav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
@@ -194,7 +196,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <a href="#top">InteractionBench</a><a href="#overview">Overview</a>
   <a href="#design">Design</a><a href="#scenarios">Scenarios</a><a href="#board">Leaderboard</a><a href="#results">Results</a>
   <a href="#samples">Listen</a><a href="#analysis">Analysis</a><a href="#method">Method</a>
-  <a href="#limitations">Limitations</a><a href="#cite">Cite</a>
+  <a href="#limitations">Limitations</a><a href="#cite">Cite</a><a href="#references">References</a>
 </div></nav>
 
 <a id="top"></a>
@@ -208,7 +210,8 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <span class="pill">221 items × 7 systems · 1,519 graded runs</span>
   </div>
   <div class="badges">
-    <a class="pill" href="https://github.com/avera-labs">▹ Code &amp; data</a>
+    <a class="pill" href="https://github.com/avera-labs/InteractionBench">▹ Code</a>
+    <a class="pill" href="https://drive.google.com/drive/folders/1C7huPcVMAiF8GFN6cg76in0dN8yYWk_w">▹ Dataset</a>
     <a class="pill" href="#samples">▹ Listen to samples</a>
   </div>
   <div class="orgline">Richard Yucheng He · Chen Xu · Yihang Liu · Tairan Chen · AveraLabs, 2026</div>
@@ -472,19 +475,54 @@ expected_overlap: required           target_response : "I have been to Paris."</
   <div class="eyebrow">Citation</div>
   <h2>Authors &amp; citation</h2>
   <p class="muted">InteractionBench is developed at AveraLabs by Richard Yucheng He, Chen Xu, Yihang Liu,
-    and Tairan Chen. The repository link points to the AveraLabs organization until the InteractionBench
-    repository is public.</p>
+    and Tairan Chen. The code is at <a href="https://github.com/avera-labs/InteractionBench">github.com/avera-labs/InteractionBench</a>, and the items,
+    recordings, and grader outputs are on <a href="https://drive.google.com/drive/folders/1C7huPcVMAiF8GFN6cg76in0dN8yYWk_w">Google Drive</a>.</p>
   <div class="codeblock">@misc{averalabs2026interactionbench,
   title  = {InteractionBench: Measuring Timing, Task Accuracy, Paralinguistic Control, and Grounding in Real-Time Voice Systems},
   author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen},
   year   = {2026},
-  url    = {https://github.com/avera-labs},
+  url    = {https://github.com/avera-labs/InteractionBench},
 }</div>
+</div></section>
+
+<!-- LICENSE -->
+<section id="license"><div class="wrap">
+  <div class="eyebrow">License</div>
+  <h2>License</h2>
+  <p class="muted">InteractionBench is released under the <a href="https://github.com/avera-labs/InteractionBench/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">Business Source License 1.1</a>.
+    Non-production use is permitted, and the Additional Use Grant permits non-commercial academic research, education,
+    evaluation, testing, and benchmarking in production. Any use primarily intended for commercial advantage requires a
+    separate commercial license from AveraLabs. Each version converts to the MIT License four years after its first public
+    distribution under the Business Source License 1.1. The evaluated systems and the models used in the harness remain
+    subject to their own terms.</p>
+</div></section>
+
+<!-- REFERENCES -->
+<section id="references"><div class="wrap">
+  <div class="eyebrow">References</div>
+  <h2>References</h2>
+  <ol class="reflist">
+    <li>G.-T. Lin et al. “<a href="https://arxiv.org/abs/2503.04721" target="_blank" rel="noopener noreferrer">Full-Duplex-Bench: A Benchmark to Evaluate Full-duplex Spoken Dialogue Models on Turn-taking Capabilities</a>.” 2025. Turned pause handling, backchanneling, turn-taking, and user interruption into evaluation tasks, which the timing scenarios build on.</li>
+    <li>G.-T. Lin et al. “<a href="https://arxiv.org/abs/2604.04847" target="_blank" rel="noopener noreferrer">Full-Duplex-Bench-v3: Benchmarking Tool Use for Full-Duplex Voice Agents Under Real-World Disfluency</a>.” 2026. Tool use under disfluent speech, with a cascaded system as reference, as the turn-based cascade is used here.</li>
+    <li>H. Zhang et al. “<a href="https://arxiv.org/abs/2511.10262" target="_blank" rel="noopener noreferrer">MTR-DuplexBench: Towards a Comprehensive Evaluation of Multi-Round Conversations for Full-Duplex Speech Language Models</a>.” 2025. Finds lower dialogue quality in systems with stronger full-duplex behavior.</li>
+    <li>Y. Li et al. “<a href="https://arxiv.org/abs/2607.07148" target="_blank" rel="noopener noreferrer">Decoupling Conversational Dynamics in Full-Duplex Spoken Models through Reinforcement Learning</a>.” 2026. DuplexPO; attributes the trade-off between what to say and when to speak to a single training objective.</li>
+    <li>S. Arora et al. “<a href="https://arxiv.org/abs/2503.01174" target="_blank" rel="noopener noreferrer">Talking Turns: Benchmarking Audio Foundation Models on Turn-Taking Dynamics</a>.” 2025. Reports a VAD cascade taking the floor in 37.1% of user pauses.</li>
+    <li>F. Jiang et al. “<a href="https://arxiv.org/abs/2608.25218" target="_blank" rel="noopener noreferrer">TurnBench: A Multi-Domain Benchmark for Turn-Taking Dynamics in Spoken Dialogue</a>.” 2026. Finds that human turn transfers begin a median of 151 ms before the turn ends.</li>
+    <li>Y. Tang et al. “<a href="https://arxiv.org/abs/2607.20460" target="_blank" rel="noopener noreferrer">Instruct-FD: Can Your Full-Duplex Speech System Follow Turn-Taking Instructions?</a>” 2026. Finds interruption the hardest turn-taking instruction to follow.</li>
+    <li>S. Kim et al. “<a href="https://arxiv.org/abs/2603.23938" target="_blank" rel="noopener noreferrer">OmniACBench: A Benchmark for Evaluating Context-Grounded Acoustic Control in Omni-Modal Models</a>.” 2026. Detects whispering acoustically, as the whisper criterion here does.</li>
+    <li>Y. Du et al. “<a href="https://arxiv.org/abs/2508.18240" target="_blank" rel="noopener noreferrer">MTalk-Bench: Evaluating Speech-to-Speech Models in Multi-Turn Dialogues via Arena-style and Rubrics Protocols</a>.” 2025. Reports near-zero agreement between LLM judges and human raters on non-verbal cues.</li>
+    <li>A. Défossez et al. “<a href="https://arxiv.org/abs/2410.00037" target="_blank" rel="noopener noreferrer">Moshi: a speech-text foundation model for real-time dialogue</a>.” 2024. Evaluated system (kyutai/moshika-pytorch-bf16).</li>
+    <li>R. Roy et al. “<a href="https://arxiv.org/abs/2602.06053" target="_blank" rel="noopener noreferrer">PersonaPlex: Voice and Role Control for Full Duplex Conversational Speech Models</a>.” 2026. Evaluated system (nvidia/personaplex-7b-v1).</li>
+    <li>X. Wang et al. “<a href="https://arxiv.org/abs/2411.00774" target="_blank" rel="noopener noreferrer">Freeze-Omni: A Smart and Low Latency Speech-to-speech Dialogue Model with Frozen LLM</a>.” 2024. Evaluated system (VITA-MLLM/Freeze-Omni).</li>
+    <li>NVIDIA. “<a href="https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3" target="_blank" rel="noopener noreferrer">parakeet-tdt-0.6b-v3</a>.” 2025. Word-level transcription of both tracks.</li>
+    <li>J. Wiseman. “<a href="https://github.com/wiseman/py-webrtcvad" target="_blank" rel="noopener noreferrer">py-webrtcvad: Python interface to the WebRTC voice activity detector</a>.” 2017. Speech segmentation of both tracks and the cascade's endpointing.</li>
+    <li>OpenAI. “<a href="https://developers.openai.com/cookbook/examples/audio/voice_agent_evaluation" target="_blank" rel="noopener noreferrer">GPT-Live evaluation guide</a>.” 2026. Places GPT-Live's output at its arrival time; InteractionBench uses the server's session clock instead.</li>
+  </ol>
 </div></section>
 
 <footer><div class="wrap">
   <p><b>InteractionBench</b> · AveraLabs · Richard Yucheng He, Chen Xu, Yihang Liu, Tairan Chen · 2026 ·
-    <a href="https://github.com/avera-labs">github.com/avera-labs</a></p>
+    <a href="https://github.com/avera-labs/InteractionBench">github.com/avera-labs/InteractionBench</a></p>
   <p class="small">Audio samples are model outputs, shown as evidence for research.</p>
 </div></footer>
 
