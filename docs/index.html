@@ -330,7 +330,8 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     value in a column. <b>Backchannel</b>: average brief acknowledgements per conversation (higher is the
     intended behavior). <b>Floor-take / Barge-in / Derail</b>: the rate at which the system took the floor
     during a monologue, started speaking in a mid-sentence pause, or was knocked off its answer by a user
-    backchannel (lower is intended). <b>Turn latency</b>: median time to begin a reply after the user stops.
+    backchannel (lower is intended). <b>Turn latency</b>: median time to begin a reply after the user stops,
+    counting only replies that do not start early (Moshi has one such reply).
     <b>Yield &amp; answer</b>: the rate at which the system, caught mid-speech, stopped and addressed an
     interruption (higher is intended). <b>Timing score</b>: the share of all timing items passed across the
     five scenarios; rows are sorted by it.</p>
