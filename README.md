@@ -80,7 +80,7 @@ Each dimension has its own grader; they (re)score from the recorded tracks + ASR
 |---|---|
 | **Timing** (backchannel · pause · turn_taking · user_backchannel · interruption) | `uv run python grade.py <run-or-folder> --task <cat> --gemini` |
 | **Reasoning**: logic_puzzle · countdown_completion · grammar | `uv run python regrade_iq.py` |
-| **Reasoning**: keyword_wait | `uv run python regrade_keyword_wait.py [models…]` |
+| **Reasoning**: keyword_wait | `uv run python regrade_iq.py keyword_wait` (judges the reply content), then `uv run python regrade_keyword_wait.py [models…]` (applies the pass rule) |
 | **Reasoning**: stay_quiet_until_help | `uv run python regrade_stay_quiet.py [models…]` |
 | **Turn-discipline**: alternating_count | `uv run python grade_alternating.py [models…]` |
 | **Paralinguistic**: whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
