@@ -26,7 +26,7 @@ The dimensions are reported in separate tables and are not combined into one ove
 
 1. **Spoken-task accuracy (reasoning).** Fifty spoken items per system across five scenarios: logic questions, countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item counts when the spoken response meets its scenario's target.
 
-2. **Conversational timing.** Per-scenario behaviour over live drills: backchannelling without grabbing the floor, waiting through a mid-sentence pause, prompt turn-taking latency, holding a thread through a user backchannel, and yielding-and-answering when interrupted.
+2. **Conversational timing.** Per-scenario behavior over live drills: backchanneling without grabbing the floor, waiting through a mid-sentence pause, prompt turn-taking latency, holding a thread through a user backchannel, and yielding-and-answering when interrupted.
 
 3. **Paralinguistic control.** Whisper on request, scored from the audio (harmonics-to-noise ratio below 6 dB and voiced fraction below 0.4), and volume understanding (an appropriate answer to very soft or very loud speech, and whether the system lowers its own voice when whispered to).
 
@@ -67,7 +67,7 @@ cp .env.example .env                      # then fill in your API keys
 uv run python headless_run.py --model gemini --task benchmark \
   --input test_set/interaction_groundedness/01/A1.wav --gemini
 
-# a timing drill (behavioural)
+# a timing drill (behavioral)
 uv run python headless_run.py --model gemini --task pause \
   --input tts_review/pause/01.wav --gemini
 ```
@@ -106,11 +106,11 @@ The standard answer for every item is a `benchmark.json` holding the graded targ
 
 | category | generator | how the ground truth is made |
 |---|---|---|
-| timing (5, behavioural) | `dashboard/gen_benchmark.py` | LLM turns a bare A/B dialogue into `benchmark.json` with one graded event anchored on a trigger word |
+| timing (5 scenarios) | `dashboard/test_prompts.md`, voiced on the dashboard's `/tts` page (MiMo TTS) | scripted user lines with no reference answer; the graders score the behavior from the two recorded tracks |
 | `keyword_wait` | `gen_keyword_wait.py` | scripted dialogue → `gen_benchmark` for the answer → MiMo TTS `A1/A2.wav` |
 | `stay_quiet_until_help` | `gen_stay_quiet.py` | same pattern (user thinks aloud, then asks for help) |
 | `grammar_correction` | `gen_grammar_correction.py` | re-TTS the grammar items in non-native accents; carries the existing standard answer |
-| `whisper_production` · `volume_understanding` | `gen_volume_whisper.py` | synthesises the soft/loud/whisper-request stimulus + `benchmark.json` |
+| `whisper_production` · `volume_understanding` | `gen_volume_whisper.py` | synthesizes the soft/loud/whisper-request stimulus + `benchmark.json` |
 | `interaction_groundedness` | `interaction_groundedness/gen_interaction.py` → `gen_interaction_tts.py` | Gemini generates 20+-turn scenarios with `ground_truth` + probes (hard-validated in code); TTS voices only the user turns and writes `benchmark.json` |
 
 All TTS goes through MiMo (`generate_tts_mimo.py`).
@@ -133,7 +133,7 @@ The raw recordings (`test_set/`, `tts_review/`, `dashboard/runs/`, and the per-d
 
 ## Acknowledgements
 
-InteractionBench builds on: **NVIDIA NeMo Parakeet** (via `parakeet-mlx` on Apple Silicon) for local word-level ASR, **MiMo** for TTS, and **Gemini** / **OpenAI** as content judges.
+InteractionBench builds on: **NVIDIA NeMo Parakeet** (via `parakeet-mlx` on Apple Silicon) for local word-level ASR, **MiMo** for TTS, **Gemini 2.5 Flash** as the judge, and **OpenAI** `gpt-4o-mini` as the cascade's language model.
 
 ## References
 
