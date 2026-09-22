@@ -99,7 +99,17 @@ def _rubric(event, category):
                 f'against the given correct answer "{exp}". Treat number words and digits as equal '
                 f'(e.g. "two"=="2"), ignore filler/phrasing, and accept any wording that states "{exp}". '
                 f'content_ok=pass if the reply gives "{exp}", otherwise FAIL.')
-    # forbidden / deliberate / keyword / grammar / wrong_word
+    if category == "keyword_wait":
+        # the generic rubric below read "respond with: 'Apple!'" literally and failed "Apple, nice catch." for its
+        # extra words; what counts is whether the reply singles out the item the user asked it to wait for
+        kw = ((event.get("trigger") or {}).get("anchor_word") or exp).strip()
+        return (f'The user read a list of items aloud and had asked the AI voice assistant to speak up the moment it '
+                f'heard one particular item, "{kw}". The audio is the assistant\'s reply right after that item. Judge '
+                f'CONTENT only (ignore timing): content_ok=pass if the reply names "{kw}" as the item it was waiting '
+                f'for (for example "{exp}"); extra words such as "nice catch", "I heard it", or a remark about the item '
+                f'are fine. FAIL if the reply does not mention "{kw}", names a different item, or only repeats or '
+                f'describes the list without singling out "{kw}".')
+    # forbidden / deliberate / grammar / wrong_word
     return (f"An AI voice assistant was supposed to respond with: \"{exp}\". Judge CONTENT only (ignore timing): "
             f"did it say that — the right words / meaning? A different or wrong response is a FAIL; "
             f"minor TTS artifacts are fine. For grammar/word corrections, any correct phrasing of the fix counts.")

@@ -312,8 +312,11 @@ def grade_turn_taking(d):
     u_utts = group_utts(uw, 1.5)
     if not u_utts:
         return {"error": "no speech detected in the user track —— say one complete utterance normally for the model to pick up."}
-    turn_end = u_utts[-1]["t1"]
-    model_after = [w for w in mw if w["t0"] >= turn_end - 0.2]
+    turn_start, turn_end = u_utts[-1]["t0"], u_utts[-1]["t1"]
+    # the reply onset is the first system word after the user STARTS the turn: speech that begins while the user is
+    # still talking is a false start (negative latency, failed downstream), not skipped. Looking only from
+    # turn_end - 0.2 s scored a reply that began 0.5 s early by its second word, and ignored greetings over the question.
+    model_after = [w for w in mw if w["t0"] >= turn_start]
     tor = 1 if len(model_after) >= 1 else 0
     latency_ms = round((model_after[0]["t0"] - turn_end) * 1000, 1) if (tor and model_after) else None
     return {"tor": tor, "latency_ms": latency_ms, "turn_end": round(turn_end, 2),

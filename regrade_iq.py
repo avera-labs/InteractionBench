@@ -1,7 +1,8 @@
 """Re-grade the three IQ categories (logic_puzzle / countdown_completion / grammar_correction).
 
-Rerun each item's grade.json with the improved content judge (grade_live._gemini_local now also feeds the full parakeet whole-track transcript to Gemini,
-so the judge doesn't miss the ending cue/completion word in a verbose/repeated-counting reply).
+Rerun each item's grade.json with the current content judge: logic/countdown are judged from the whole-track
+transcript (the answer can come late in a verbose reply); trigger events (grammar, keyword_wait) from the reply clip
+and that clip's own transcript. `regrade_iq.py keyword_wait` re-judges keyword_wait; then run regrade_keyword_wait.py.
 Only overwrite successfully produced results; print the items whose verdict changed.
 """
 import glob

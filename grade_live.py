@@ -146,8 +146,11 @@ def grade_live(benchmark, user_words, model_words, model_wav_path=None,
                 rec["silence"] = {"status": "pass" if onset >= trig_end - gm.TOL else "fail"}
 
             if gemini and model_wav_path:
+                # the hint is the transcript of the judged clip only; handing over the whole track let the judge
+                # credit words said before the trigger (a system reciting the list back scored as if it interjected)
+                clip_words = [w for w in model_words if onset - 0.2 <= w["t0"] <= end + 0.4]
                 rec["content"] = _gemini_local(model_wav_path, onset, end, e, category, api_key,
-                                               asr=" ".join(w["word"] for w in model_words))
+                                               asr=" ".join(w["word"] for w in clip_words))
             else:
                 tgt = gm._norm(e.get("target_response"))
                 rec["content"] = {"status": "pass" if tgt and tgt in gm._norm(heard) else "uncertain",

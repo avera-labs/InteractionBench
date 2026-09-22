@@ -38,10 +38,10 @@ IG = "interaction_groundedness"                  # long multi-turn logic groundi
 GRAMMAR = ("grammar_correction",)                # grammar proactive-correction task (internal category name grammar_correction)
 # pin specific items to display for a task (these were re-run with correct timing; don't let auto-selection drop them when a verdict changes)
 PINNED = {"user_backchannel": ["17", "29"], "volume_understanding": ["03", "01"],   # in 01, gemini softens to a whisper too, which demos well
-          # gpt-live-1 is full-duplex: these two show the split it creates. In turn_taking it answers at
-          # ~150ms where the turn-based systems take ~1.2s -- picked near its own median, not its best
-          # (-190ms) since a third of its replies start before the user is done. In backchannel it is the
-          # only system that backchannels repeatedly without ever grabbing the floor.
+          # gpt-live-1 is full-duplex: these two show the split it creates. In turn_taking, item 3 is one of
+          # its clean starts (+150ms, where the turn-based systems take ~1.2s) and item 18 its usual early
+          # start (-330ms, a false start under the rule); 21 of its 30 replies begin before the user is done.
+          # In backchannel it is the only system that backchannels repeatedly without ever grabbing the floor.
           "turn_taking": ["18", "3"], "backchannel": ["4", "12"]}
 REASON_CONTENT = ("logic_puzzle", "countdown_completion", "grammar_correction", "keyword_wait")
 K_PER_TASK = 2                                   # how many examples to feature per task
@@ -58,11 +58,16 @@ def load_result(d, task):
     got derailed), so a system that never opens its mouth scores a clean sheet on both -- FreezeOmni
     sat silent through 6 pause items and was credited with "waited patiently" for every one. The
     model track's ASR settles it, and it is already on disk, so no re-grading is needed.
+    For pause, speaking somewhere is not enough: the system must say something after the pause, or a greeting
+    before the sentence (Moshi's "Hey, what's up?") would count as a patient reply.
     """
     j = json.load(open(f"{d}/{result_name(task)}"))
     if task in ("pause", "user_backchannel"):
         try:
-            j["_spoke"] = bool(json.load(open(f"{d}/B_model.parakeet.json")).get("words"))
+            words = json.load(open(f"{d}/B_model.parakeet.json")).get("words") or []
+            j["_spoke"] = bool(words)
+            if task == "pause" and j.get("pause_window"):
+                j["_spoke"] = any(w["t0"] >= j["pause_window"][1] for w in words)
         except Exception:  # noqa: BLE001 -- no ASR on disk: leave it unset rather than guess
             pass
     return j
@@ -80,7 +85,7 @@ def eval_item(task, j):
         return dict(good=good, badge=badge, cls="good" if good else "bad", metric=f"bc={nb}", heard=heard)
     if task == "pause":
         ji = j.get("jumped_in")
-        if j.get("_spoke") is False:                      # never answered -> not "patient", just absent
+        if not ji and j.get("_spoke") is False:           # never answered after the pause -> not "patient", just absent
             return dict(good=False, badge="no reply", cls="warn",
                         metric=f"pause={j.get('pause_dur')}s", heard="")
         good = ji is False
@@ -435,7 +440,7 @@ def summarize(task, vals):
                     floor_take=mean(lambda v: 1.0 if v.get("tor") else 0.0))
     elif task == "pause":
         base.update(bargein=mean(lambda v: 1.0 if v.get("jumped_in") else 0.0),
-                    no_reply=mean(lambda v: 1.0 if v.get("_spoke") is False else 0.0))
+                    no_reply=mean(lambda v: 1.0 if (not v.get("jumped_in") and v.get("_spoke") is False) else 0.0))
     elif task == "turn_taking":
         def _clean(v):                                   # replied AND started after the user finished (within window)
             l = _num(v.get("latency_ms"))

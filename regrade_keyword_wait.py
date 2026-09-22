@@ -30,8 +30,11 @@ def _num(x):
     return x if isinstance(x, (int, float)) else None
 
 
-def regrade_event(ev):
-    """Mutate ev in place, return the new status. Keeps all original fields, idempotent."""
+def regrade_event(ev, model_words=None):
+    """Mutate ev in place, return the new status. Keeps all original fields, idempotent.
+    model_words (the model track's ASR) lets the check reject a "response" that is really the middle of an
+    utterance begun before the keyword: the onset is the first word after the keyword, so a system that talks
+    straight through the list would otherwise count as having responded to it."""
     tim = ev.get("timing") if isinstance(ev.get("timing"), dict) else {}
     onset = _num(tim.get("resp_onset"))
     if onset is None:
@@ -50,7 +53,8 @@ def regrade_event(ev):
         ev["interrupt"] = None
         ev["content_ok"] = None
         return "no_response"
-    interrupt = onset >= (trig - 0.3 if trig is not None else 0)   # it "responded after the keyword", not jumping in before the keyword
+    continuation = any(w["t0"] < onset and w["t1"] >= onset - 0.8 for w in (model_words or []))   # already mid-utterance
+    interrupt = onset >= (trig - 0.3 if trig is not None else 0) and not continuation   # a fresh response after the keyword
     ev["interrupt"] = "pass" if interrupt else "fail"
     ev["content_ok"] = "pass" if content_ok else "fail"
     ev["status"] = "pass" if (interrupt and content_ok) else "fail"
@@ -77,7 +81,9 @@ def main(models):
             g = json.loads(gp.read_text())
             evs = g.get("events") or [{}]
             old = evs[0].get("status")
-            st = regrade_event(evs[0])
+            mp = d / "B_model.parakeet.json"
+            mw = json.loads(mp.read_text()).get("words", []) if mp.exists() else None
+            st = regrade_event(evs[0], mw)
             g["events"] = evs
             g["summary"] = {"n": 1, "npass": 1 if st == "pass" else 0,
                             "rate": 1.0 if st == "pass" else 0.0}
