@@ -6,15 +6,22 @@ in <run>/session_clock/. Both are scored with build_site_data's rules, so the
 numbers match the site and the paper. Prints the per-scenario comparison, the timing aggregate next to
 the other systems, and the rank correlation between timing and spoken-task accuracy with each version
 of GPT-Live. --shift re-scores turn-taking and pause with every arrival word moved by the given seconds,
-to show how much the estimated arrival anchor matters. --json writes the numbers for the paper tables.
+to show how much the estimated arrival anchor matters. It also prints how far apart the two placements are
+(the network and buffering delay in the timing items, and how much the session clock gains on the recorded
+user track over the long conversations), how early simply concatenating the deltas would put the last words
+of the long conversations, and how late the server's recognizer reports the user's words.
+--json writes the numbers for the paper tables.
 
-Usage:  uv run python compare_clocks.py [--shift 0.3] [--json out.json]
+Usage:  uv run python compare_clocks.py [--shift 0.04] [--json out.json]   # 0.04 s is the calibration spread
 """
 import argparse
+import itertools
 import json
+import re
 import shutil
 import statistics as st
 import tempfile
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import build_site_data as B
@@ -78,9 +85,61 @@ def shifted(task, shift):
     return B.summarize(task, vals)
 
 
+def word_offsets(d):
+    """(session time, arrival minus session) for each of GPT-Live's words matched between the two placements of a run."""
+    norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
+    a = json.loads((placed(d, "arrival") / "B_model.parakeet.json").read_text())["words"]
+    s = json.loads((placed(d, "session") / "B_model.parakeet.json").read_text())["words"]
+    sm = SequenceMatcher(None, [norm(w["word"]) for w in a], [norm(w["word"]) for w in s], autojunk=False)
+    return [(s[j + k]["t0"], a[i + k]["t0"] - s[j + k]["t0"]) for i, j, n in sm.get_matching_blocks() for k in range(n)]
+
+
+def clock_offsets():
+    """Delay between the placements in the timing items, session-clock gain over the long conversations,
+    the error of concatenating the deltas, and the lateness of the server's user-side recognizer."""
+    norm = lambda w: re.sub(r"[^a-z0-9]", "", w.lower())
+    timed = ["turn_taking", "pause", "interruption", "user_backchannel"]
+    meds = [st.median(y for _, y in o) for t in timed for d in gptlive_runs(t) if (o := word_offsets(d))]
+    dq = st.quantiles(meds, n=4)
+    print(f"\nArrival minus session clock, GPT-Live's words in {', '.join(timed)}: "
+          f"median {st.median(meds):.2f}s over {len(meds)} runs (IQR {dq[0]:.2f}-{dq[2]:.2f})")
+    long_runs = sorted((ROOT / "test_set" / "interaction_groundedness").glob("*/live_*_gptlive"))
+    slopes = []
+    for d in long_runs:                                   # Theil-Sen slope of the offset against session time
+        p = word_offsets(d)
+        slopes.append(st.median((y2 - y1) / (x2 - x1) for (x1, y1), (x2, y2) in itertools.combinations(p, 2)
+                                if abs(x2 - x1) > 1.0))
+    q = st.quantiles(slopes, n=4)
+    print(f"Session clock gain on the user track over the long conversations: median {-st.median(slopes):.1%} "
+          f"of the elapsed time (IQR {-q[2]:.1%} to {-q[0]:.1%}, {len(slopes)} runs)")
+    early = []
+    for d in long_runs:                                   # deltas played back to back from the first delta's position
+        raw = json.loads((d / "B_model_raw.parakeet.json").read_text())["words"]
+        arr = json.loads((placed(d, "arrival") / "B_model.parakeet.json").read_text())["words"]
+        u0 = json.loads((placed(d, "arrival") / "placement.json").read_text())["anchor_s"]
+        sm = SequenceMatcher(None, [norm(w["word"]) for w in raw], [norm(w["word"]) for w in arr], autojunk=False)
+        pairs = [(i + k, j + k) for i, j, n in sm.get_matching_blocks() for k in range(n)][-5:]
+        early.append(st.median(arr[j]["t0"] - (u0 + raw[i]["t0"]) for i, j in pairs))
+    print(f"Concatenated deltas, last words of the long conversations: a median of {st.median(early):.1f}s too early")
+    late = []
+    for root in ("tts_review", "test_set"):
+        for d in sorted((ROOT / root).glob("*/*/live_*_gptlive")):
+            heard = [e for e in json.loads((d / "transcript_clock.json").read_text()) if e["who"] == "user"]
+            sw = [(norm(x), e["start_ms"] / 1000) for e in heard for x in e["text"].split() if norm(x)]
+            aw = [(norm(w["word"]), w["t0"]) for w in json.loads((d / "A_user.parakeet.json").read_text())["words"] if norm(w["word"])]
+            sm = SequenceMatcher(None, [x for x, _ in sw], [x for x, _ in aw], autojunk=False)
+            offs = [sw[i + k][1] - aw[j + k][1] for i, j, n in sm.get_matching_blocks() for k in range(n) if aw[j + k][1] < 10]
+            if offs:
+                late.append(st.median(offs))
+    print(f"Server recognizer on the user's words (first 10 s of each run): a median of {st.median(late):.2f}s late "
+          f"over {len(late)} runs")
+    return {"delay_s": st.median(meds), "delay_iqr": [dq[0], dq[2]],
+            "gain": -st.median(slopes), "concatenation_early_s": st.median(early), "recognizer_late_s": st.median(late)}
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--shift", type=float, default=0.3)
+    ap.add_argument("--shift", type=float, default=0.04)
     ap.add_argument("--json", type=Path)
     args = ap.parse_args()
 
@@ -157,6 +216,7 @@ def main():
         row = [shifted(task, -args.shift), summary(task, "arrival"), shifted(task, args.shift)]
         print(f"  {task:17} pass " + "   ".join(f"{r['npass']}/{r['n']}" for r in row))
         out["sensitivity"][task] = [r["npass"] for r in row]
+    out["offsets"] = clock_offsets()
     if args.json:
         args.json.write_text(json.dumps(out, indent=1))
 

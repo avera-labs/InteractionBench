@@ -23,7 +23,8 @@ Later runs record the absolute position (`user_abs_s`) and are placed exactly.
 
 CALIBRATED_LEAD: on 2026-09-23 three turn-taking items were re-run with the absolute position recorded.
 The exact anchor was 0.32, 0.36, and 0.40 s later than the transcript estimate, because the audio of a
-word arrives after its transcript delta. Archived runs use the mean, 0.36 s.
+word arrives after its transcript delta. Archived runs use the mean, 0.36 s. The three runs are kept in
+tts_review/_gptlive_arrival_calibration/turn_taking/{10,11,18}/; compare exact_anchor() with anchor() there.
 """
 import json
 from pathlib import Path

@@ -97,7 +97,7 @@ uv run python build_site_data.py          # → docs/data/manifest.json + docs/a
 
 #### GPT-Live's timeline
 
-GPT-Live's audio deltas carry no timestamps, so its tracks are placed after the run. Every system is timed where the client hears it, and GPT-Live is placed the same way: `arrival_align.py` plays each audio delta from the moment the driver logged its arrival (`clock.jsonl`), with the first delta's position estimated from the server transcript and a calibrated 0.36 s correction (runs recorded from 23 September 2026 log it exactly). The same audio can also be placed on the server's session clock (`live_align.py`), which removes the network delay.
+GPT-Live's audio deltas carry no timestamps, so its tracks are placed after the run. Every system is timed where the client hears it, and GPT-Live is placed the same way: `arrival_align.py` plays each audio delta from the moment the driver logged its arrival (`clock.jsonl`), with the first delta's position estimated from the server transcript and a calibrated 0.36 s correction (runs recorded from 23 September 2026 log it exactly; the three calibration runs are in `tts_review/_gptlive_arrival_calibration/`). The same audio can also be placed on the server's session clock (`live_align.py`), which removes the network delay in the timing items; over the long conversations the session clock gains about 6% on the recorded user track, so it is used only for that comparison.
 
 ```bash
 uv run python regrade_arrival.py [--spoken | --ig | --content]   # place by arrival and re-grade into <run>/arrival/
@@ -145,6 +145,17 @@ uv run --extra dashboard python dashboard/server.py    # then open the printed U
 The raw recordings (`test_set/`, `tts_review/`, `dashboard/runs/`, and the per-dimension audio) are large and not committed. They stay local and can be regenerated with the `gen_*` scripts and `headless_run.py`. The example clips shown on the public site live in `docs/audio/` and are committed.
 
 📦 **Full test dataset:** the complete benchmark recordings are available on [Google Drive](https://drive.google.com/drive/folders/1C7huPcVMAiF8GFN6cg76in0dN8yYWk_w?usp=sharing). Download and unpack them into `test_set/` (and `tts_review/`) to reproduce the graded results without re-running the generators.
+
+## Citation
+
+```bibtex
+@misc{averalabs2026interactionbench,
+  title  = {InteractionBench: Measuring Timing, Task Accuracy, Paralinguistic Control, and Grounding in Real-Time Voice Systems},
+  author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen and Baodong Cao},
+  year   = {2026},
+  url    = {https://github.com/avera-labs/InteractionBench},
+}
+```
 
 ## Acknowledgements
 
