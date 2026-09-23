@@ -1,8 +1,8 @@
 # InteractionBench
 
-**Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems.**
+**Measuring timing, task accuracy, whisper and volume, and grounding in real-time voice systems.**
 
-InteractionBench evaluates real-time voice systems on four dimensions: conversational timing, spoken-task accuracy, paralinguistic control, and groundedness in long conversations. Every system receives the same recorded user audio. The text instruction and the release of the next user turn on multi-turn items differ across systems, as described in the site's Limitations section.
+InteractionBench evaluates real-time voice systems on four dimensions: conversational timing, spoken-task accuracy, whisper and volume, and groundedness in long conversations. Every system receives the same recorded user audio. The text instruction and the release of the next user turn on multi-turn items differ across systems, as described in the site's Limitations section.
 
 🔊 **Live site:** https://avera-labs.github.io/InteractionBench/
 
@@ -24,13 +24,13 @@ Moshi, PersonaPlex, and FreezeOmni were self-hosted; revisions are abbreviated H
 
 The dimensions are reported in separate tables and are not combined into one overall rank.
 
-1. **Spoken-task accuracy (reasoning).** Fifty spoken items per system across five scenarios: logic questions, countdown completions, grammar repair, keyword-wait interjections, and stay-quiet-until-asked. An item counts when the spoken response meets its scenario's target.
+1. **Spoken-task accuracy.** Fifty spoken items per system across five scenarios. Logic questions and countdown completions score only the answer; grammar repair, keyword-wait interjections, and stay-quiet-until-asked also depend on when the system speaks or stays silent. An item counts when the spoken response meets its scenario's target.
 
 2. **Conversational timing.** Per-scenario behavior over live drills: backchanneling without grabbing the floor, waiting through a mid-sentence pause, prompt turn-taking latency, holding a thread through a user backchannel, and yielding-and-answering when interrupted.
 
-3. **Paralinguistic control.** Whisper on request, scored from the audio (harmonics-to-noise ratio below 6 dB and voiced fraction below 0.4), and volume understanding (an appropriate answer to very soft or very loud speech, and whether the system lowers its own voice when whispered to).
+3. **Whisper and volume.** Whisper on request, scored from the audio (harmonics-to-noise ratio below 6 dB and voiced fraction below 0.4), and volume understanding (an appropriate answer to very soft or very loud speech, and whether the system lowers its own voice when whispered to).
 
-4. **Interaction groundedness (long multi-turn logic).** Ten conversations of 22–24 turns build up state, such as a grocery list or a road trip. Probes then check whether the system recalls what it was told, tracks updates, says when information was never given, keeps constraints, attributes statements to the right speaker, rejects false premises, and flags nonsense questions. An LLM judge grades each probe from a time-aligned transcript and gives the conversation a 0–100 coherence score.
+4. **Interaction groundedness.** Whether replies stay consistent with what a long conversation has established. Ten conversations of 22–24 turns build up state, such as a grocery list or a road trip. Probes then check whether the system recalls what it was told, tracks updates, says when information was never given, keeps constraints, attributes statements to the right speaker, rejects false premises, and flags nonsense questions. An LLM judge grades each probe from a time-aligned transcript and gives the conversation a 0–100 coherence score.
 
 ## Repository layout
 
@@ -84,7 +84,7 @@ Each dimension has its own grader; they (re)score from the recorded tracks + ASR
 | **Reasoning**: keyword_wait | `uv run python regrade_iq.py keyword_wait` (judges the reply content), then `uv run python regrade_keyword_wait.py [models…]` (applies the pass rule) |
 | **Reasoning**: stay_quiet_until_help | `uv run python regrade_stay_quiet.py [models…]` |
 | **Turn-discipline**: alternating_count | `uv run python grade_alternating.py [models…]` |
-| **Paralinguistic**: whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
+| **Whisper and volume**: whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
 | **Interaction groundedness** | `uv run python grade_interaction.py --model all`, then `uv run python retranscribe_ig.py` (once, for recordings whose silences `compact_gaps.py` shortened before it transcribed segment by segment), `uv run python rejudge_ig.py` (judges every conversation three times and keeps the majority verdict per probe) and `uv run python check_probe_premises.py` (checks, per run, the probes whose expected reply assumes what the assistant did or said; the flagged cases were read by hand, and invalid probes are left out of the score) |
 
 `grade.py --list` shows available dashboard runs; omit `[models…]` to grade all seven systems. Every grader writes the standard `grade.json` (`summary.{n,npass,rate}` + per-event detail) that the site reads.
@@ -150,7 +150,7 @@ The raw recordings (`test_set/`, `tts_review/`, `dashboard/runs/`, and the per-d
 
 ```bibtex
 @misc{averalabs2026interactionbench,
-  title  = {InteractionBench: Measuring Timing, Task Accuracy, Paralinguistic Control, and Grounding in Real-Time Voice Systems},
+  title  = {InteractionBench: Measuring Timing, Task Accuracy, Whisper and Volume, and Grounding in Real-Time Voice Systems},
   author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen and Baodong Cao},
   year   = {2026},
   url    = {https://github.com/avera-labs/InteractionBench},

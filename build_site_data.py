@@ -33,7 +33,7 @@ BEHAV = ["backchannel", "pause", "turn_taking", "user_backchannel", "interruptio
 # version is archived as grammar_correction_old, not on the board); keyword_wait/stay_quiet are restraint types.
 IQ = ["logic_puzzle", "countdown_completion", "grammar_correction", "keyword_wait", "stay_quiet_until_help"]
 ALT = "alternating_count"                        # single turn-discipline variant, usually shown under the logic_puzzle group (not on the IQ table)
-PARA = ["whisper_production", "volume_understanding"]   # paralinguistic dimensions (breathy whisper / volume understanding), their own board + examples
+PARA = ["whisper_production", "volume_understanding"]   # the whisper-and-volume dimension (whisper production / volume understanding), its own board + examples
 IG = "interaction_groundedness"                  # long multi-turn logic grounding (probes: nonsense/state/unknown/constraint...), its own board + examples
 GRAMMAR = ("grammar_correction",)                # grammar proactive-correction task (internal category name grammar_correction)
 # pin specific items to display for a task (these were re-run with correct timing; don't let auto-selection drop them when a verdict changes)
@@ -249,7 +249,7 @@ def eval_item(task, j):
 
 # ---------------------------------------------------------------- dirs/files
 def is_graded(task):
-    """Tasks that use grade.json + the test_set root (all of IQ + alternating + paralinguistic). Behavior tasks use <task>.json + tts_review."""
+    """Tasks that use grade.json + the test_set root (all of IQ + alternating + whisper and volume). Behavior tasks use <task>.json + tts_review."""
     return task in IQ or task == ALT or task in PARA
 
 
@@ -505,7 +505,7 @@ def timing_totals():
 
 
 def para_metrics(task):
-    """Per-system metrics for a paralinguistic task (aggregated over every item, does not require all 6 systems — if freezeomni is missing one, it still counts its own)."""
+    """Per-system metrics for a whisper-and-volume task (aggregated over every item, does not require all 6 systems — if freezeomni is missing one, it still counts its own)."""
     r = {}
     for s in SYSTEMS:
         evs = []
@@ -683,7 +683,7 @@ def main():
         manifest["examples"].setdefault("logic_puzzle", []).append(blk)
         print(f"  [alternating_count] appended to the logic_puzzle group: item {item}")
 
-    # ---- paralinguistic (whisper production / volume understanding): own board + examples ----
+    # ---- whisper and volume (whisper production / volume understanding): own board + examples ----
     cls_rank = {"good": 0, "warn": 1, "bad": 2}
     for task in PARA:
         manifest["leaderboards"][task] = para_metrics(task)

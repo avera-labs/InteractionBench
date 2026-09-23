@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>InteractionBench: Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems</title>
+<title>InteractionBench: Measuring timing, task accuracy, whisper and volume, and grounding in real-time voice systems</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opt@0,6..72;1,6..72&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -203,7 +203,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <header class="hero"><div class="wrap">
   <div class="eyebrow">InteractionBench · AveraLabs</div>
   <h1>InteractionBench</h1>
-  <p class="sub">Measuring timing, task accuracy, paralinguistic control, and grounding in real-time voice systems.</p>
+  <p class="sub">Measuring timing, task accuracy, whisper and volume, and grounding in real-time voice systems.</p>
   <div class="badges">
     <span class="pill strong">Thirteen scenarios</span>
     <span class="pill">Four evaluation dimensions</span>
@@ -243,7 +243,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="scenarios"><div class="wrap">
   <div class="eyebrow">Scenarios</div>
   <h2>Thirteen scenarios</h2>
-  <p class="muted">Five scenarios test conversational timing and five test spoken-task accuracy, and one of these, stay-quiet, also requires <b>restraint</b>. Two scenarios test <b>paralinguistic control</b>, whispering on request and responding to volume, and one tests <b>groundedness</b> in ten conversations of more than twenty turns, described with its results below. Each card states what happens, what a successful system does, and what to listen for in the samples.</p>
+  <p class="muted">Five scenarios test conversational timing and five test spoken tasks: two score only the answer, and three also depend on when the system speaks or stays silent; one of these, stay-quiet, requires <b>restraint</b>. Two scenarios test <b>whisper and volume</b>: whispering on request and replying to very soft or very loud requests. One tests <b>groundedness</b>, whether replies stay consistent with what the conversation has established, in ten conversations of more than twenty turns, described with its results below. Each card states what happens, what a successful system does, and what to listen for in the samples.</p>
   <div class="taskfam">
     <div class="taskcol"><h3>Conversational timing</h3>
       <div class="scen"><div class="name">Backchannel</div>
@@ -291,7 +291,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
         <div class="r"><b>Listen for:</b> silence during the thinking-aloud, then the right answer after the request.</div></div>
       <div class="scen" style="border:none"><div class="r">Most accuracy items are multi-turn exchanges. The system's spoken response is checked against a target: the right answer, the right interjection, or silence followed by the right answer.</div></div>
     </div>
-    <div class="taskcol" style="grid-column:1/-1"><h3>Paralinguistic control <span class="small muted">· volume &amp; whisper</span></h3>
+    <div class="taskcol" style="grid-column:1/-1"><h3>Whisper and volume</h3>
       <div class="scen"><div class="name">Whisper on request</div>
         <div class="r"><b>Scenario:</b> the user asks the system to whisper its answer (“whisper it: what's seven times eight?”).</div>
         <div class="r"><b>Expected:</b> the system answers correctly and actually whispers.</div>
@@ -316,7 +316,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
 <section id="results"><div class="wrap">
   <div class="eyebrow">Results</div>
   <h2>Results</h2>
-  <p class="muted">Conversational timing, spoken-task accuracy, paralinguistic control, and interaction groundedness are reported in separate tables and are not combined into an overall rank.</p>
+  <p class="muted">Conversational timing, spoken-task accuracy, whisper and volume, and interaction groundedness are reported in separate tables and are not combined into an overall rank.</p>
 
   <h3>Spoken-task accuracy: items answered correctly, out of 50</h3>
   <p class="small muted">Fifty spoken items per system, ten in each of five scenarios: logic questions,
@@ -338,7 +338,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
   <div class="tbl-wrap"><table id="lb-behav"></table></div>
   <p class="small muted">All timing is measured where the client heard each system, so the timing of the three hosted systems includes network delay. GPT-Live's timeline is rebuilt from the arrival of its audio (see Methodology). On the server's session clock, which removes the delay, GPT-Live speaks in 28 of 30 pauses and starts answering 0.1–0.5 s before the user finishes in 21 of 30 turn-taking items, and its timing score is 56% instead of 86%. At the client, a delay of about 1.5 s moves most of these starts after the user's turn. GPT-Realtime and Gemini Live return no server timestamps, so their delay cannot be removed.</p>
 
-  <h3>Paralinguistic control: whisper and volume</h3>
+  <h3>Whisper and volume</h3>
   <p class="small muted"><b>Whisper on request</b> (10 items): the user asks the system to whisper its answer. A reply counts as a whisper if its harmonics-to-noise ratio is below 6&nbsp;dB and its voiced fraction is below 0.4, measured from the audio. <b>Volume understanding</b> (10 items, 5 whispered and 5 shouted): the reply must suit a user who speaks very softly or very loudly. <b>Adapt</b> is the share of the 5 whispered requests on which the system also lowered its own voice; it is reported separately. <b>Score</b> counts whisper items passed plus volume items understood, out of 20.</p>
   <div class="tbl-wrap"><table id="lb-para"></table></div>
   <p class="small muted">Gemini Live whispers on 8 of 10 requests, GPT-Live and GPT-Realtime on 2, and the other systems on none. Most systems give an appropriate answer to whispered or shouted requests, but only 2 of the 35 whispered requests received a quieter reply.</p>
@@ -375,7 +375,7 @@ footer{padding:30px 0 60px;color:var(--muted);font-size:13.5px;text-align:center
     <p class="muted">No system corrects a grammar error within 50–300 ms of hearing it while the user is still
       speaking. On stay-quiet, which requires holding back until asked, the hosted systems pass 7–8 of 10 items and the open full-duplex models 0–1. The cascade passes all 10 by construction, because it cannot speak inside a user turn.</p></div></div>
   <div class="finding"><div class="n">3</div><div>
-    <h3>Paralinguistic cues</h3>
+    <h3>Whisper and volume</h3>
     <p class="muted">Most systems respond appropriately to a whispered or shouted request, but only Gemini Live
       whispers on most explicit requests (8 of 10), and only 2 of the 35 whispered requests across all seven
       systems drew a reply in a lowered voice.</p></div></div>
@@ -478,7 +478,7 @@ expected_overlap: required           target_response : "I have been to Paris."</
     Tairan Chen, and Baodong Cao. The code is at <a href="https://github.com/avera-labs/InteractionBench">github.com/avera-labs/InteractionBench</a>, and the items,
     recordings, and grader outputs are on <a href="https://drive.google.com/drive/folders/1C7huPcVMAiF8GFN6cg76in0dN8yYWk_w">Google Drive</a>.</p>
   <div class="codeblock">@misc{averalabs2026interactionbench,
-  title  = {InteractionBench: Measuring Timing, Task Accuracy, Paralinguistic Control, and Grounding in Real-Time Voice Systems},
+  title  = {InteractionBench: Measuring Timing, Task Accuracy, Whisper and Volume, and Grounding in Real-Time Voice Systems},
   author = {Richard Yucheng He and Chen Xu and Yihang Liu and Tairan Chen and Baodong Cao},
   year   = {2026},
   url    = {https://github.com/avera-labs/InteractionBench},
@@ -648,7 +648,7 @@ function buildBehav(M){
   document.getElementById("lb-behav").innerHTML=h+"</tbody>";
 }
 
-/* ---- paralinguistic (whisper / volume) leaderboard ---- */
+/* ---- whisper and volume leaderboard ---- */
 function buildPara(M){
   const el=document.getElementById("lb-para"); if(!el||!M.para_tasks) return;
   const W="whisper_production", V="volume_understanding";
@@ -658,7 +658,7 @@ function buildPara(M){
     {k:s=>`${(M.leaderboards[V][s]||{}).adapt??0}/5`, label:"Adapt ▲", v:s=>(M.leaderboards[V][s]||{}).adapt||0, hi:true},
   ];
   const best=COLS.map(c=>Math.max(...M.systems.map(s=>c.v(s.id))));
-  // score = whisper items passed + volume items understood (max 20), the paper's paralinguistic aggregate;
+  // score = whisper items passed + volume items understood (max 20), the paper's whisper-and-volume score;
   // adapt is reported beside it, not added in
   const total=s=>((M.leaderboards[W][s]||{}).npass||0)+((M.leaderboards[V][s]||{}).understanding||0);
   const maxT=Math.max(...M.systems.map(s=>total(s.id)));
