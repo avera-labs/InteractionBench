@@ -327,9 +327,12 @@ def _clock_report(clk, out_dir: Path):
     model_rate = (m1 - m0) / SR / span if span > 0 else 0      # model seconds produced per wall second
     user_rate = (u1 - u0) / SR / span if span > 0 else 0       # user seconds consumed per wall second
     drift = [round(((m - m0) - (u - u0)) / SR * 1000) for _, m, u in clk]
+    # user_abs_s is the absolute user-track position at which each delta arrived; arrival_align.py uses it
+    # to place the stream exactly, instead of estimating the first delta's position from the transcript.
     (out_dir / "clock.jsonl").write_text(
         "".join(json.dumps({"t": w, "model_s": round((m - m0) / SR, 3),
-                            "user_s": round((u - u0) / SR, 3), "drift_ms": d}) + "\n"
+                            "user_s": round((u - u0) / SR, 3), "drift_ms": d,
+                            "user_abs_s": round(u / SR, 3), "model_abs_s": round(m / SR, 3)}) + "\n"
                 for (w, m, u), d in zip(clk, drift)))
     return {"n": len(clk), "span_s": round(span, 2),
             "model_rate": round(model_rate, 4), "user_rate": round(user_rate, 4),

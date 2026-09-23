@@ -38,9 +38,9 @@ IG = "interaction_groundedness"                  # long multi-turn logic groundi
 GRAMMAR = ("grammar_correction",)                # grammar proactive-correction task (internal category name grammar_correction)
 # pin specific items to display for a task (these were re-run with correct timing; don't let auto-selection drop them when a verdict changes)
 PINNED = {"user_backchannel": ["17", "29"], "volume_understanding": ["03", "01"],   # in 01, gemini softens to a whisper too, which demos well
-          # gpt-live-1 is full-duplex: these two show the split it creates. In turn_taking, item 3 is one of
-          # its clean starts (+150ms, where the turn-based systems take ~1.2s) and item 18 its usual early
-          # start (-330ms, a false start under the rule); 21 of its 30 replies begin before the user is done.
+          # In turn_taking, items 18 and 3 show gpt-live-1 on the client clock (+1050 and +1650 ms). On the server's
+          # session clock the same replies start at -330 and +150 ms: item 18 is one of the 21 of 30 in which the
+          # model starts before the user is done, and the network delay moves it after the user's turn.
           # In backchannel it is the only system that backchannels repeatedly without ever grabbing the floor.
           "turn_taking": ["18", "3"], "backchannel": ["4", "12"]}
 REASON_CONTENT = ("logic_puzzle", "countdown_completion", "grammar_correction", "keyword_wait")
@@ -531,12 +531,35 @@ def para_metrics(task):
     return r
 
 
-def ig_eval(j):
-    """Verdict for one interaction_groundedness item: probe pass rate + coherence → good/warn/bad (colors the sample grid)."""
+def ig_valid_counts(d, j):
+    """(npass, n, n_invalid) over the probes whose premise holds in this run.
+
+    Some probes assume what the assistant did or said (false action, false accusation, unknown); their expected
+    replies were written against the scripted assistant. check_probe_premises.py records, per run, which of those
+    assumptions fail given what the system actually said (premise_check.json); those probes are left out.
+    """
+    from difflib import SequenceMatcher
     s = j.get("summary") or {}
-    n = s.get("n") or 0
-    npass = s.get("npass") or 0
-    rate = s.get("rate") if s.get("rate") is not None else (npass / n if n else 0)
+    n, npass = s.get("n") or 0, s.get("npass") or 0
+    pc = f"{d}/premise_check.json"
+    if not os.path.exists(pc):
+        return npass, n, 0
+    norm = lambda q: re.sub(r"[^a-z0-9 ]", "", (q or "").lower()).strip()
+    bad = [norm(p["question"]) for p in json.load(open(pc)) if p.get("premise_holds") is False]
+    events = [(norm(e.get("question")), bool(e.get("pass"))) for e in j.get("events") or []]
+    passed_bad = 0
+    for q in bad:                      # the judge sometimes rewrites a question ("Q3" -> "Q three"), so match loosely
+        best = max(events, key=lambda e: SequenceMatcher(None, q, e[0]).ratio(), default=None)
+        if best and SequenceMatcher(None, q, best[0]).ratio() >= 0.75 and best[1]:
+            passed_bad += 1
+    return npass - passed_bad, n - len(bad), len(bad)
+
+
+def ig_eval(j, d=None):
+    """Verdict for one interaction_groundedness item: probe pass rate + coherence → good/warn/bad (colors the sample grid)."""
+    npass, n, _ = ig_valid_counts(d, j) if d else ((j.get("summary") or {}).get("npass") or 0,
+                                                     (j.get("summary") or {}).get("n") or 0, 0)
+    rate = npass / n if n else 0
     cls = "good" if rate >= 0.6 else ("warn" if rate >= 0.3 else "bad")
     return dict(good=rate >= 0.6, cls=cls, npass=npass, n_probes=n, rate=round(rate, 3),
                 coherence=j.get("coherence"), verdict=j.get("verdict", ""), events=j.get("events") or [])
@@ -551,14 +574,17 @@ def ig_metrics():
             gf = f"{d}/grade.json"
             if os.path.exists(gf):
                 try:
-                    rows.append(json.load(open(gf)))
+                    rows.append((d, json.load(open(gf))))
                 except Exception:  # noqa: BLE001
                     pass
-        npass = sum((v.get("summary") or {}).get("npass", 0) for v in rows)
-        nprobe = sum((v.get("summary") or {}).get("n", 0) for v in rows)
-        cohs = [v.get("coherence") for v in rows if isinstance(v.get("coherence"), (int, float))]
+        counts = [ig_valid_counts(d, v) for d, v in rows]
+        npass, nprobe = sum(c[0] for c in counts), sum(c[1] for c in counts)
+        cohs = [v.get("coherence") for _, v in rows if isinstance(v.get("coherence"), (int, float))]
         r[s] = dict(n=len(rows), npass=npass, n_probes=nprobe,
                     pass_rate=round(npass / nprobe, 3) if nprobe else 0,
+                    npass_all=sum((v.get("summary") or {}).get("npass", 0) for _, v in rows),
+                    n_probes_all=sum((v.get("summary") or {}).get("n", 0) for _, v in rows),
+                    n_invalid=sum(c[2] for c in counts),
                     coherence=round(sum(cohs) / len(cohs)) if cohs else None)
     return r
 
@@ -715,7 +741,7 @@ def main():
     dirs = ig_item_dirs()
     scored = []                                            # pick the scenarios with the biggest across-system split in probe pass rate as examples
     for item, m in dirs.items():
-        evals = {s: ig_eval(json.load(open(f"{d}/grade.json"))) for s, d in m.items()}
+        evals = {s: ig_eval(json.load(open(f"{d}/grade.json")), d) for s, d in m.items()}
         ngood = sum(1 for e in evals.values() if e["good"])
         spread = min(ngood, len(evals) - ngood)
         scored.append((spread, ngood, item, m, evals))

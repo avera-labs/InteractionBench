@@ -1,6 +1,7 @@
 """Compress the big "both-tracks-silent" gaps in a dual-track recording down to a natural length (keep ~0.7s),
 trimming A_user/B_model in lockstep to stay aligned, rebuild combined.wav, then re-run parakeet so the word-level
 timestamps line up. For gemini-style recordings with trailing turn boundaries and long dead air between turns.
+Parakeet runs segment by segment, as for every other recording: on a whole track it sometimes drops an utterance.
 
 Usage: uv run python compact_gaps.py --model gemini            # process every scenario for this model
        uv run python compact_gaps.py --model gemini --items 01 05
@@ -61,7 +62,7 @@ def compact_dir(d: Path):
     sf.write(str(d / "B_model.wav"), bm2, sr, subtype="PCM_16")
     sf.write(str(d / "combined.wav"), np.clip(au2 + bm2, -1, 1), sr, subtype="PCM_16")
     for trk in ("A_user", "B_model"):                          # re-run parakeet
-        w, _ = parakeet_local.transcribe_wav(str(d / f"{trk}.wav"))
+        w, _ = parakeet_local.transcribe_wav_segmented(str(d / f"{trk}.wav"))
         json.dump({"words": w}, open(d / f"{trk}.parakeet.json", "w"))
     return round(len(au) / sr, 1), round(len(au2) / sr, 1)
 

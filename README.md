@@ -38,6 +38,7 @@ The dimensions are reported in separate tables and are not combined into one ove
 headless_run.py            # run a system over a scenario (drives the model, records both tracks, ASR + grade)
 grade_*.py                 # per-dimension graders (grade_interaction.py = interaction groundedness)
 build_site_data.py         # aggregate results → docs/data/manifest.json + docs/audio/*.mp3
+arrival_align.py, live_align.py  # GPT-Live's timeline: by arrival (primary) and on the server's session clock
 build_standalone.py        # bundle the site into a single self-contained HTML
 gen_*.py                   # scenario / TTS generators per dimension
 acoustics.py, compact_gaps.py, halfduplex.py, opus_encode.js …
@@ -84,7 +85,7 @@ Each dimension has its own grader; they (re)score from the recorded tracks + ASR
 | **Reasoning**: stay_quiet_until_help | `uv run python regrade_stay_quiet.py [models…]` |
 | **Turn-discipline**: alternating_count | `uv run python grade_alternating.py [models…]` |
 | **Paralinguistic**: whisper_production · volume_understanding | `uv run python grade_acoustic.py [models…]` |
-| **Interaction groundedness** | `uv run python grade_interaction.py --model all` |
+| **Interaction groundedness** | `uv run python grade_interaction.py --model all`, then `uv run python retranscribe_ig.py` (once, for recordings whose silences `compact_gaps.py` shortened before it transcribed segment by segment), `uv run python rejudge_ig.py` (judges every conversation three times and keeps the majority verdict per probe) and `uv run python check_probe_premises.py` (checks, per run, the probes whose expected reply assumes what the assistant did or said; the flagged cases were read by hand, and invalid probes are left out of the score) |
 
 `grade.py --list` shows available dashboard runs; omit `[models…]` to grade all seven systems. Every grader writes the standard `grade.json` (`summary.{n,npass,rate}` + per-event detail) that the site reads.
 
@@ -93,6 +94,20 @@ Then aggregate everything into the site data:
 ```bash
 uv run python build_site_data.py          # → docs/data/manifest.json + docs/audio/*.mp3
 ```
+
+#### GPT-Live's timeline
+
+GPT-Live's audio deltas carry no timestamps, so its tracks are placed after the run. Every system is timed where the client hears it, and GPT-Live is placed the same way: `arrival_align.py` plays each audio delta from the moment the driver logged its arrival (`clock.jsonl`), with the first delta's position estimated from the server transcript and a calibrated 0.36 s correction (runs recorded from 23 September 2026 log it exactly). The same audio can also be placed on the server's session clock (`live_align.py`), which removes the network delay.
+
+```bash
+uv run python regrade_arrival.py [--spoken | --ig | --content]   # place by arrival and re-grade into <run>/arrival/
+uv run python promote_arrival.py                                 # make it the primary files; session clock → <run>/session_clock/
+uv run python compare_clocks.py                                  # GPT-Live's results on both clocks
+```
+
+#### Numbers quoted in the paper
+
+`protocol_stats.py` (injection times, silences before the next turn, turns released while a system was speaking), `ig_stats.py` (groundedness by probe type and failure label), `threshold_sensitivity.py` (results under other thresholds), and `compare_clocks.py` compute every figure the paper quotes that is not in a results table.
 
 ### 3. Preview the site
 
